@@ -1012,36 +1012,41 @@
     }
 
     async function salvarExame() {
-      const tipo = document.getElementById("novoTipo").value;
-      const sigla = document.getElementById("novoSigla").value.trim().toUpperCase();
-      const nome = document.getElementById("novoNome").value.trim();
-      const codigo = document.getElementById("novoCodigo").value.trim();
-      const autorizacao = document.getElementById("novoAutorizacao").value;
-      const anexo = document.getElementById("novoAnexo").value;
-      const termos = document.getElementById("novoTermos").value;
-      const observacao = document.getElementById("novaObservacao").value.trim();
-      if (!sigla || !nome || !codigo) {
-        mostrarToast("Preencha sigla, nome e código ou preço");
-        return;
-      }
-      const payload = { tipo, sigla, nome, codigo, autorizacao, anexo, termos, observacao };
-      let resultado;
-      if (indiceEdicao === null) {
-        resultado = await supabaseClient.from("exames").insert([payload]);
-      } else {
-        const exameAtual = exames[indiceEdicao];
-        resultado = await supabaseClient.from("exames").update(payload).eq("id", exameAtual.id);
-      }
-      if (resultado.error) {
-        console.error("Erro ao salvar:", resultado.error);
-        mostrarToast("Alteração bloqueada. Falta liberar o painel admin no Supabase.");
-        return;
-      }
-      mostrarToast(indiceEdicao === null ? "Exame adicionado no banco" : "Exame atualizado no banco");
-      limparFormulario();
-      painelFormulario.style.display = "none";
-      await carregarExamesBanco();
-    }
+  const tipo = document.getElementById("novoTipo").value;
+  const sigla = document.getElementById("novoSigla").value.trim().toUpperCase();
+  const nome = document.getElementById("novoNome").value.trim();
+  const codigo = document.getElementById("novoCodigo").value.trim();
+  const autorizacao = document.getElementById("novoAutorizacao").value;
+  const anexo = document.getElementById("novoAnexo").value;
+  const termos = document.getElementById("novoTermos").value;
+  const observacao = document.getElementById("novaObservacao").value.trim();
+
+  if (!sigla || !nome || !codigo) {
+    alert("Preencha os campos obrigatórios");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("exames")
+    .insert([{
+      tipo,
+      sigla,
+      nome,
+      codigo,
+      autorizacao,
+      anexo,
+      termos,
+      observacao
+    }]);
+
+  if (error) {
+    alert("Erro ao salvar");
+    console.error(error);
+    return;
+  }
+
+  carregarExamesBanco();
+}
 
     function editarExame(index) {
       const exame = exames[index];
