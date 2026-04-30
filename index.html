@@ -502,9 +502,10 @@
       </div>
 
       <div class="linha-acoes-topo">
-        <button class="btn btn-verde" onclick="carregarExamesBanco()">Atualizar dados</button>
+        <button class="btn btn-verde" onclick="mostrarFormularioNovo()">Novo exame</button>
+        <button class="btn btn-verde-claro" onclick="carregarExamesBanco()">Atualizar dados</button>
         <button class="btn btn-verde-claro" onclick="exportarBackup()">Exportar backup</button>
-        <span class="subtexto">Versão de consulta conectada ao banco online.</span>
+        <span class="subtexto">Versão editável conectada ao banco online.</span>
       </div>
 
       <div class="filtros" style="margin-top: 12px;">
@@ -840,16 +841,7 @@
       semResultado.style.display = "none";
 
       lista.forEach(exame => {
-        const indexOriginal = exames.findIndex(item =>
-          item.sigla === exame.sigla &&
-          item.nome === exame.nome &&
-          item.codigo === exame.codigo &&
-          item.autorizacao === exame.autorizacao &&
-          item.anexo === exame.anexo &&
-          item.observacao === exame.observacao &&
-          (item.tipo || "Normal") === (exame.tipo || "Normal") &&
-          (item.termos || "") === (exame.termos || "")
-        );
+        const indexOriginal = exames.findIndex(item => item.id === exame.id);
 
         const tr = document.createElement("tr");
 
@@ -872,6 +864,8 @@
                 ${(exame.tipo || "Normal") === "Particular" ? "Copiar preço" : "Copiar código"}
               </button>
               <button class="btn btn-laranja" onclick="copiarLinha(${indexOriginal})">Copiar linha</button>
+              <button class="btn btn-azul" onclick="editarExame(${indexOriginal})">Editar</button>
+              <button class="btn btn-vermelho" onclick="excluirExame(${indexOriginal})">Excluir</button>
             </div>
           </td>
         `;
@@ -1012,41 +1006,58 @@
     }
 
     async function salvarExame() {
-  const tipo = document.getElementById("novoTipo").value;
-  const sigla = document.getElementById("novoSigla").value.trim().toUpperCase();
-  const nome = document.getElementById("novoNome").value.trim();
-  const codigo = document.getElementById("novoCodigo").value.trim();
-  const autorizacao = document.getElementById("novoAutorizacao").value;
-  const anexo = document.getElementById("novoAnexo").value;
-  const termos = document.getElementById("novoTermos").value;
-  const observacao = document.getElementById("novaObservacao").value.trim();
+      const tipo = document.getElementById("novoTipo").value;
+      const sigla = document.getElementById("novoSigla").value.trim().toUpperCase();
+      const nome = document.getElementById("novoNome").value.trim();
+      const codigo = document.getElementById("novoCodigo").value.trim();
+      const autorizacao = document.getElementById("novoAutorizacao").value;
+      const anexo = document.getElementById("novoAnexo").value;
+      const termos = document.getElementById("novoTermos").value;
+      const observacao = document.getElementById("novaObservacao").value.trim();
 
-  if (!sigla || !nome || !codigo) {
-    alert("Preencha os campos obrigatórios");
-    return;
-  }
+      if (!sigla || !nome || !codigo) {
+        alert("Preencha os campos obrigatórios");
+        return;
+      }
 
-  const { error } = await supabaseClient
-    .from("exames")
-    .insert([{
-      tipo,
-      sigla,
-      nome,
-      codigo,
-      autorizacao,
-      anexo,
-      termos,
-      observacao
-    }]);
+      const dados = {
+        tipo,
+        sigla,
+        nome,
+        codigo,
+        autorizacao,
+        anexo,
+        termos,
+        observacao,
+        atualizado_em: new Date().toISOString()
+      };
 
-  if (error) {
-    alert("Erro ao salvar");
-    console.error(error);
-    return;
-  }
+      let error;
 
-  carregarExamesBanco();
-}
+      if (indiceEdicao !== null && exames[indiceEdicao] && exames[indiceEdicao].id) {
+        const resposta = await supabaseClient
+          .from("exames")
+          .update(dados)
+          .eq("id", exames[indiceEdicao].id);
+        error = resposta.error;
+      } else {
+        const resposta = await supabaseClient
+          .from("exames")
+          .insert([dados]);
+        error = resposta.error;
+      }
+
+      if (error) {
+        alert("Erro ao salvar");
+        console.error(error);
+        return;
+      }
+
+      limparFormulario();
+      painelFormulario.style.display = "none";
+      await carregarExamesBanco();
+      mostrarToast(indiceEdicao === null ? "Exame adicionado" : "Exame atualizado");
+    }
 
     function editarExame(index) {
       const exame = exames[index];
@@ -1090,7 +1101,7 @@
         .eq("id", exame.id);
       if (error) {
         console.error("Erro ao excluir:", error);
-        mostrarToast("Exclusão bloqueada. Falta liberar o painel admin no Supabase.");
+        mostrarToast("Erro ao excluir. Confira as policies do Supabase.");
         return;
       }
       limparFormulario();
