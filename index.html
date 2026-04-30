@@ -1,1119 +1,127 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Central de Consulta de Exames</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    :root {
-      --verde-bio: #16a34a;
-      --verde-claro: #dcfce7;
-      --verde-suave: #ecfdf5;
-      --azul: #2563eb;
-      --escuro: #0f172a;
-      --texto: #1f2937;
-      --cinza: #6b7280;
-      --borda: #dbe4ee;
-      --branco: #ffffff;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(187, 247, 208, 0.95), transparent 32%),
-        linear-gradient(180deg, #ecfdf5 0%, #f3f6fb 320px, #f3f6fb 100%);
-      color: var(--texto);
-    }
-
-    .topo {
-      background: linear-gradient(135deg, #bbf7d0 0%, #86efac 38%, #22c55e 100%);
-      color: #052e16;
-      padding: 30px 16px 34px;
-      text-align: center;
-      box-shadow: 0 8px 28px rgba(22, 163, 74, 0.20);
-      border-bottom: 1px solid rgba(255,255,255,0.6);
-    }
-
-    .topo-conteudo {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    .selo-sistema {
-      display: inline-block;
-      background: rgba(255,255,255,0.72);
-      color: #166534;
-      border: 1px solid rgba(22, 101, 52, 0.18);
-      padding: 7px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 10px;
-    }
-
-    .topo h1 {
-      margin: 0;
-      font-size: 32px;
-      letter-spacing: -0.5px;
-    }
-
-    .topo p {
-      margin: 8px 0 0;
-      opacity: 0.92;
-      font-size: 15px;
-    }
-
-    .container {
-      max-width: 1500px;
-      margin: -18px auto 24px;
-      padding: 0 16px 32px;
-    }
-
-    .painel {
-      background: rgba(255,255,255,0.94);
-      border: 1px solid rgba(219, 228, 238, 0.9);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-      margin-bottom: 20px;
-      backdrop-filter: blur(8px);
-    }
-
-    .painel-destaque {
-      border-top: 4px solid #22c55e;
-    }
-
-    .busca-area, .cadastro-grid, .filtros {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .busca-area input,
-    .cadastro-grid input,
-    .cadastro-grid select,
-    .cadastro-grid textarea,
-    .filtros select {
-      padding: 13px 14px;
-      border: 1px solid var(--borda);
-      border-radius: 12px;
-      font-size: 14px;
-      outline: none;
-      background: #ffffff;
-      color: #111827;
-      transition: 0.2s;
-    }
-
-    .busca-area input {
-      flex: 1;
-      min-width: 280px;
-      font-size: 15px;
-      border: 1px solid #bbf7d0;
-      box-shadow: inset 0 0 0 1px rgba(34,197,94,0.08);
-    }
-
-    .cadastro-grid input,
-    .cadastro-grid select {
-      min-width: 140px;
-      flex: 1;
-    }
-
-    .cadastro-grid textarea {
-      width: 100%;
-      min-height: 80px;
-      resize: vertical;
-      font-family: Arial, sans-serif;
-    }
-
-    .busca-area input:focus,
-    .cadastro-grid input:focus,
-    .cadastro-grid select:focus,
-    .cadastro-grid textarea:focus,
-    .filtros select:focus {
-      border-color: #22c55e;
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
-    }
-
-    .btn {
-      border: none;
-      border-radius: 12px;
-      padding: 12px 16px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 14px;
-      transition: 0.2s;
-      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.02);
-    }
-
-    .btn-limpar {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
-    .btn-azul {
-      background: #2563eb;
-      color: white;
-    }
-
-    .btn-verde {
-      background: #16a34a;
-      color: white;
-    }
-
-    .btn-verde-claro {
-      background: #dcfce7;
-      color: #166534;
-      border: 1px solid #bbf7d0;
-    }
-
-    .btn-laranja {
-      background: #f59e0b;
-      color: white;
-    }
-
-    .btn-vermelho {
-      background: #dc2626;
-      color: white;
-    }
-
-    .btn-roxo {
-      background: #7c3aed;
-      color: white;
-    }
-
-    .info {
-      margin-top: 14px;
-      font-size: 14px;
-      color: #4b5563;
-    }
-
-    .secao-titulo {
-      margin: 0 0 14px;
-      font-size: 19px;
-      color: #0f172a;
-      letter-spacing: -0.2px;
-    }
-
-    .subtexto {
-      margin: -8px 0 14px;
-      color: #64748b;
-      font-size: 13px;
-    }
-
-    .resumo-cards {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(150px, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .card-resumo {
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 14px;
-      min-height: 82px;
-    }
-
-    .card-resumo span {
-      display: block;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .card-resumo strong {
-      display: block;
-      margin-top: 8px;
-      font-size: 25px;
-      color: #0f172a;
-    }
-
-    .card-resumo.verde {
-      background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 100%);
-      border-color: #bbf7d0;
-    }
-
-    .card-resumo.azul {
-      background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
-      border-color: #bfdbfe;
-    }
-
-    .card-resumo.laranja {
-      background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
-      border-color: #fde68a;
-    }
-
-    .card-resumo.vermelho {
-      background: linear-gradient(180deg, #fef2f2 0%, #ffffff 100%);
-      border-color: #fecaca;
-    }
-
-    .card-resumo.roxo {
-      background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%);
-      border-color: #ddd6fe;
-    }
-
-    .tabela-wrap {
-      overflow-x: auto;
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-      border: 1px solid rgba(219, 228, 238, 0.9);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 1450px;
-    }
-
-    thead {
-      background: linear-gradient(135deg, #0f172a 0%, #14532d 100%);
-      color: white;
-    }
-
-    th, td {
-      padding: 14px 12px;
-      text-align: left;
-      border-bottom: 1px solid #e5e7eb;
-      vertical-align: middle;
-      font-size: 14px;
-    }
-
-    tbody tr:hover {
-      background: #f0fdf4;
-    }
-
-    .linha-particular {
-      background: rgba(37, 99, 235, 0.06);
-    }
-
-    .sigla {
-      font-weight: bold;
-      color: #0f172a;
-      white-space: nowrap;
-    }
-
-    .codigo {
-      font-weight: bold;
-      color: #1d4ed8;
-      white-space: nowrap;
-    }
-
-    .preco {
-      font-weight: bold;
-      color: #2563eb;
-      white-space: nowrap;
-    }
-
-    .acoes {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .acoes .btn {
-      padding: 8px 12px;
-      font-size: 13px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 7px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-      color: white;
-      white-space: nowrap;
-    }
-
-    .status-nao {
-      background: #16a34a;
-    }
-
-    .status-sim {
-      background: #f59e0b;
-    }
-
-    .status-anexo {
-      background: #dc2626;
-    }
-
-    .status-particular {
-      background: #2563eb;
-    }
-
-    .anexo-nao {
-      background: #6b7280;
-    }
-
-    .anexo-sim {
-      background: #dc2626;
-    }
-
-    .termos-vazio {
-      background: #9ca3af;
-    }
-
-    .termos-nao {
-      background: #6b7280;
-    }
-
-    .termos-sim {
-      background: #7c3aed;
-    }
-
-    .rodape {
-      text-align: center;
-      font-size: 13px;
-      color: #64748b;
-      margin-top: 18px;
-    }
-
-    .sem-resultado {
-      text-align: center;
-      padding: 24px;
-      color: #6b7280;
-      font-weight: bold;
-    }
-
-    .toast {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      background: #111827;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(10px);
-      transition: 0.25s;
-      z-index: 999;
-      font-size: 14px;
-    }
-
-    .toast.show {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    .bloco-acoes {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 14px;
-    }
-
-    .campo-edicao {
-      background: #fff7ed;
-      border: 1px solid #fdba74;
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    .linha-acoes-topo {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 14px;
-      align-items: center;
-    }
-
-    .arquivo-escondido {
-      display: none;
-    }
-
-    @media (max-width: 1100px) {
-      .resumo-cards {
-        grid-template-columns: repeat(2, minmax(150px, 1fr));
-      }
-    }
-
-    @media (max-width: 900px) {
-      .busca-area,
-      .cadastro-grid,
-      .filtros,
-      .linha-acoes-topo {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .btn {
-        width: 100%;
-      }
-
-      .topo h1 {
-        font-size: 24px;
-      }
-
-      .container {
-        margin-top: -12px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .resumo-cards {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Central de Exames</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f5f5f5;
+  padding: 20px;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+button {
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+}
+
+.btn {
+  background: #16a34a;
+  color: white;
+}
+
+.btn2 {
+  background: #2563eb;
+  color: white;
+}
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+td, th {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+</style>
 </head>
+
 <body>
-  <div class="topo">
-    <div class="topo-conteudo">
-      <span class="selo-sistema">Ferramenta interna</span>
-      <h1>Central de Consulta de Exames</h1>
-      <p>Consulta operacional de códigos, autorizações, anexos, termos e orientações internas</p>
-    </div>
-  </div>
 
-  <div class="container">
-    <div class="painel painel-destaque">
-      <h2 class="secao-titulo">Pesquisar exames</h2>
-      <p class="subtexto">Use a busca para localizar por sigla, nome, código, preço ou observação.</p>
+<div class="container">
+  <h2>Central de Exames</h2>
+
+  <button class="btn" onclick="importar()">IMPORTAR EXAMES</button>
+  <button class="btn2" onclick="carregar()">ATUALIZAR</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Sigla</th>
+        <th>Nome</th>
+        <th>Código</th>
+      </tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+  </table>
+</div>
+
+<script>
+
+const supabaseClient = supabase.createClient(
+  "https://kgznlatjntdwnzsrcmqp.supabase.co",
+  "sb_publishable__ODBzBpNarobgI45tj5cGQ_A7AM4Qq3"
+);
+
+async function importar() {
+  const exames = [
+    { sigla: "HEMO", nome: "HEMOGRAMA COMPLETO", codigo: "11043202" },
+    { sigla: "GLI", nome: "GLICOSE", codigo: "11011203" },
+    { sigla: "TSH", nome: "TSH", codigo: "11053089" },
+    { sigla: "CREAT", nome: "CREATININA", codigo: "11011149" },
+    { sigla: "COLES", nome: "COLESTEROL TOTAL", codigo: "11011122" },
+    { sigla: "HDL", nome: "HDL", codigo: "11013109" },
+    { sigla: "LDL", nome: "LDL", codigo: "11013095" }
+  ];
+
+  const { error } = await supabaseClient.from("exames").insert(exames);
+
+  if (error) {
+    alert("Erro");
+    console.log(error);
+  } else {
+    alert("Importado!");
+    carregar();
+  }
+}
+
+async function carregar() {
+  const { data } = await supabaseClient.from("exames").select("*");
+
+  const tabela = document.getElementById("tabela");
+  tabela.innerHTML = "";
+
+  data.forEach(e => {
+    tabela.innerHTML += `
+      <tr>
+        <td>${e.sigla}</td>
+        <td>${e.nome}</td>
+        <td>${e.codigo}</td>
+      </tr>
+    `;
+  });
+}
+
+carregar();
+
+</script>
 
-      <div class="busca-area">
-        <input
-          type="text"
-          id="busca"
-          placeholder="Digite sigla, nome, código, preço ou observação"
-        />
-        <button class="btn btn-limpar" onclick="limparBusca()">Limpar busca</button>
-        <button class="btn btn-azul" onclick="copiarResultadosVisiveis()">Copiar resultados visíveis</button>
-      </div>
-
-      <div class="linha-acoes-topo">
-        <button class="btn btn-verde" onclick="mostrarFormularioNovo()">Novo exame</button>
-        <button class="btn btn-verde-claro" onclick="carregarExamesBanco()">Atualizar dados</button>
-        <button class="btn btn-verde-claro" onclick="exportarBackup()">Exportar backup</button>
-        <span class="subtexto">Versão editável conectada ao banco online.</span>
-      </div>
-
-      <div class="filtros" style="margin-top: 12px;">
-        <select id="filtroTipo" onchange="aplicarFiltros()">
-          <option value="">Todos os tipos</option>
-          <option value="Normal">Normal</option>
-          <option value="Particular">Particular</option>
-        </select>
-
-        <select id="filtroAutorizacao" onchange="aplicarFiltros()">
-          <option value="">Todas as autorizações</option>
-          <option value="Não precisa">Não precisa</option>
-          <option value="Precisa autorizar">Precisa autorizar</option>
-          <option value="Precisa autorizar com anexo">Precisa autorizar com anexo</option>
-        </select>
-
-        <select id="filtroAnexo" onchange="aplicarFiltros()">
-          <option value="">Todos os anexos</option>
-          <option value="Não">Sem anexo</option>
-          <option value="Sim">Com anexo</option>
-        </select>
-
-        <select id="filtroTermos" onchange="aplicarFiltros()">
-  <option value="">Todos os termos</option>
-  <option value="__VAZIO__">Sem definição</option>
-  <option value="Não">Não</option>
-  <option value="Sim">Sim</option>
-</select>
-      </div>
-
-      <div class="resumo-cards">
-        <div class="card-resumo verde">
-          <span>Total de exames</span>
-          <strong id="totalExames"></strong>
-        </div>
-        <div class="card-resumo azul">
-          <span>Encontrados</span>
-          <strong id="totalEncontrados"></strong>
-        </div>
-        <div class="card-resumo laranja">
-          <span>Precisam autorizar</span>
-          <strong id="totalAutorizar"></strong>
-        </div>
-        <div class="card-resumo vermelho">
-          <span>Com anexo</span>
-          <strong id="totalAnexo"></strong>
-        </div>
-        <div class="card-resumo roxo">
-          <span>Particulares</span>
-          <strong id="totalParticular"></strong>
-        </div>
-      </div>
-    </div>
-
-    <div class="tabela-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 100px;">TIPO</th>
-            <th style="width: 110px;">SIGLA</th>
-            <th>NOME</th>
-            <th style="width: 140px;">CÓDIGO / PREÇO</th>
-            <th style="width: 210px;">AUTORIZAÇÃO</th>
-            <th style="width: 120px;">ANEXO</th>
-            <th style="width: 120px;">TERMOS</th>
-            <th>OBSERVAÇÃO</th>
-            <th style="width: 320px;">AÇÕES</th>
-          </tr>
-        </thead>
-        <tbody id="tabelaExames"></tbody>
-      </table>
-      <div id="semResultado" class="sem-resultado" style="display:none;">
-        Nenhum exame encontrado
-      </div>
-    </div>
-
-    <div class="painel painel-formulario" id="painelFormulario" style="margin-top: 20px; display:none;">
-      <h2 class="secao-titulo" id="tituloFormulario">Adicionar novo exame</h2>
-      <p class="subtexto">Cadastre ou edite exames com cuidado. Use o backup antes de grandes alterações.</p>
-
-      <div class="cadastro-grid" id="formularioExame">
-        <select id="novoTipo" onchange="alternarPlaceholderValor()">
-          <option value="Normal">Normal</option>
-          <option value="Particular">Particular</option>
-        </select>
-
-        <input id="novoSigla" placeholder="SIGLA" />
-        <input id="novoNome" placeholder="NOME" />
-        <input id="novoCodigo" placeholder="CÓDIGO" />
-
-        <select id="novoAutorizacao">
-          <option value="Não precisa">Não precisa</option>
-          <option value="Precisa autorizar">Precisa autorizar</option>
-          <option value="Precisa autorizar com anexo">Precisa autorizar com anexo</option>
-        </select>
-
-        <select id="novoAnexo">
-          <option value="Não">Sem anexo</option>
-          <option value="Sim">Com anexo</option>
-        </select>
-
-        <select id="novoTermos" title="Termos obrigatórios">
-  <option value="">Termos</option>
-  <option value="Não">Não</option>
-  <option value="Sim">Sim</option>
-</select>
-      </div>
-
-      <div style="margin-top: 10px;">
-        <textarea id="novaObservacao" placeholder="Observação opcional"></textarea>
-      </div>
-
-      <div class="bloco-acoes">
-        <button class="btn btn-verde" id="btnSalvar" onclick="salvarExame()">Adicionar exame</button>
-        <button class="btn btn-limpar" onclick="limparFormulario()">Limpar formulário</button>
-        <button class="btn btn-laranja" id="btnCancelarEdicao" onclick="cancelarEdicao()" style="display:none;">Cancelar edição</button>
-      </div>
-    </div>
-
-    <div class="rodape">
-      Ferramenta interna de apoio operacional | Dados conectados ao Supabase
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <script>
-    const SUPABASE_URL = "https://kgznlatjntdwnzsrcmqp.supabase.co";
-    const SUPABASE_KEY = "sb_publishable__ODBzBpNarobgI45tj5cGQ_A7AM4Qq3";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const examesPadrao = [
-      { tipo: "Normal", sigla: "HEMO", nome: "HEMOGRAMA COMPLETO", codigo: "11043202", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "URI", nome: "URINA TIPO I", codigo: "11141000", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "EPF1", nome: "PARASITOLOGICO DE FEZES", codigo: "11032073", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "TSH", nome: "TSH - HORMONIO TIREOESTIMULANTE - ULTRASSENSIVEL", codigo: "11053089", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "T4L", nome: "T4L - TIROXINA LIVRE", codigo: "11991151", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "PTH", nome: "PTH PARATORMONIO", codigo: "11055049", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "NA", nome: "SODIO", codigo: "11011335", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "K", nome: "POTASSIO", codigo: "11011270", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "UREIA", nome: "UREIA", codigo: "11011386", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "CREAT", nome: "CREATININA", codigo: "11011149", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "MGS", nome: "MAGNESIO", codigo: "11011254", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "HOMI", nome: "HOMOCISTEINA", codigo: "11016329", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "FERRI", nome: "FERRITINA", codigo: "11015063", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "PTF", nome: "PROTEINAS TOTAIS E FRACOES", codigo: "11011300", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "URICO", nome: "ACIDO URICO", codigo: "11011033", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "GGT", nome: "GAMA GLUTAMIL TRANSFERASE", codigo: "11012170", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "FA", nome: "FOSFATASE ALCALINA", codigo: "11011157", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "HBGLI", nome: "HEMOGLOBINA GLICADA - HBA1C", codigo: "11014148", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "INSUL", nome: "INSULINA", codigo: "11052040", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "GLI", nome: "GLICOSE", codigo: "11011203", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "COLES", nome: "COLESTEROL TOTAL", codigo: "11011122", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "HDL", nome: "COLESTEROL - HDL", codigo: "11013109", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "LDL", nome: "COLESTEROL - LDL", codigo: "11013095", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "TRIGL", nome: "TRIGLICERIDEOS", codigo: "11012242", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "VLDL", nome: "COLESTEROL - VLDL", codigo: "11013117", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "FOLIC", nome: "ACIDO FOLICO", codigo: "11015012", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "B12", nome: "VITAMINA B12", codigo: "11015101", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "VIT25", nome: "VITAMINA D - 25 HIDROXI", codigo: "11015128", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "CORTI", nome: "CORTISOL", codigo: "11052015", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "VITAA", nome: "VITAMINA A", codigo: "11015144", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "VITAC", nome: "VITAMINA C", codigo: "11015160", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "T3L", nome: "T3L - TRIIODOTIRONINA LIVRE", codigo: "11991285", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "CPK", nome: "CPK TOTAL - CREATINOFOSFOQUINASE", codigo: "11013125", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "CAI", nome: "CALCIO IONIZAVEL", codigo: "11013087", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "ZN", nome: "ZINCO SERICO", codigo: "11173041", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "COBRE", nome: "COBRE", codigo: "11173033", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "FOSFO", nome: "FOSFORO", codigo: "11011173", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "ACTH", nome: "ACTH - HORMONIO ADRENOCORTICOTROFICO", codigo: "11056010", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "DHEA", nome: "DEHIDROEPIANDROSTERONA - DHEA", codigo: "11054026", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "DHEAS", nome: "DEHIDROEPIANDROSTERONA SULFATO - DHEA SO4", codigo: "11054034", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "TGO", nome: "TGO (TRANSAMINASE GLUTAMICO OXALACETICA)", codigo: "11011360", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "TGP", nome: "TGP (TRANSAMINASE GLUTAMICO PIRUVICA)", codigo: "11011378", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "CA", nome: "CALCIO TOTAL", codigo: "11011092", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "LDH", nome: "LDH - LACTATO DESIDROGENASE", codigo: "11013141", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "BILI", nome: "BILIRRUBINAS TOTAL E FRACOES", codigo: "11011084", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "CEA", nome: "CEA - ANTIGENO CARCINOEMBRIOGENICO", codigo: "11065036", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "ATB", nome: "ANTIBIOGRAMA", codigo: "11113014", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "URO", nome: "UROCULTURA - JATO MEDIO", codigo: "11112093", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "LH", nome: "LH - HORMONIO LUTEINIZANTE", codigo: "11052058", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "FSH", nome: "FSH - HORMONIO FOLICULO ESTIMULANTE", codigo: "11052023", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "TESTL", nome: "TESTOSTERONA LIVRE", codigo: "11991216", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "ANDRO", nome: "ANDROSTENEDIONA", codigo: "11055022", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "DNAHS", nome: "ANTI - DNA - HELICE SIMPLES", codigo: "11062088", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "SSB", nome: "ANTICORPOS ANTI SSB (LA)", codigo: "11063165", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "SSA", nome: "ANTICORPOS ANTI SSA (RO)", codigo: "11063157", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "SM", nome: "ANTICORPOS ANTI SM", codigo: "11063149", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "CCP", nome: "ANTI CYCLIC CITRULLINATED PEPTIDE", codigo: "11062460", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "ASO", nome: "ANTIESTREPTOLISINA O (ASLO)", codigo: "11061030", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "HLPCR", nome: "PESQUISA DE HLA B27", codigo: "11151056", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "ROSE", nome: "WAALER ROSE", codigo: "11061600", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "FAN4", nome: "FATOR ANTI NUCLEAR (FAN)", codigo: "11062142", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
-      { tipo: "Normal", sigla: "LATEX", nome: "FATOR REUMATOIDE QUANTITATIVO", codigo: "11061278", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" }
-    ];
-
-    let exames = [];
-    let indiceEdicao = null;
-
-    const tabelaExames = document.getElementById("tabelaExames");
-    const busca = document.getElementById("busca");
-    const totalExames = document.getElementById("totalExames");
-    const totalEncontrados = document.getElementById("totalEncontrados");
-    const totalAutorizar = document.getElementById("totalAutorizar");
-    const totalAnexo = document.getElementById("totalAnexo");
-    const totalParticular = document.getElementById("totalParticular");
-    const painelFormulario = document.getElementById("painelFormulario");
-    const semResultado = document.getElementById("semResultado");
-    const toast = document.getElementById("toast");
-    const btnSalvar = document.getElementById("btnSalvar");
-    const btnCancelarEdicao = document.getElementById("btnCancelarEdicao");
-    const tituloFormulario = document.getElementById("tituloFormulario");
-    const novoCodigo = document.getElementById("novoCodigo");
-    const novoTipo = document.getElementById("novoTipo");
-
-    async function carregarExamesBanco() {
-      mostrarToast("Carregando exames do banco online...");
-      const { data, error } = await supabaseClient
-        .from("exames")
-        .select("id, tipo, sigla, nome, codigo, autorizacao, anexo, termos, observacao, criado_em, atualizado_em")
-        .order("sigla", { ascending: true });
-      if (error) {
-        console.error("Erro ao carregar exames:", error);
-        mostrarToast("Erro ao carregar exames do Supabase");
-        renderizarTabela([]);
-        return;
-      }
-      exames = (data || []).map(item => ({
-        id: item.id,
-        tipo: item.tipo || "Normal",
-        sigla: item.sigla || "",
-        nome: item.nome || "",
-        codigo: item.codigo || "",
-        autorizacao: item.autorizacao || "Não precisa",
-        anexo: item.anexo || "Não",
-        termos: item.termos || "",
-        observacao: item.observacao || ""
-      }));
-      aplicarFiltros();
-      mostrarToast("Dados carregados do banco online");
-    }
-
-    async function salvarExames() {
-      // Agora os dados ficam no Supabase. Esta função ficou apenas para compatibilidade.
-    }
-
-    function mostrarToast(texto) {
-      toast.textContent = texto;
-      toast.classList.add("show");
-      setTimeout(() => {
-        toast.classList.remove("show");
-      }, 1800);
-    }
-
-    function copiarTexto(texto, mensagem) {
-      navigator.clipboard.writeText(texto)
-        .then(() => mostrarToast(mensagem))
-        .catch(() => mostrarToast("Não foi possível copiar"));
-    }
-
-    function classeAutorizacao(status) {
-      if (status === "Não precisa") return "status-nao";
-      if (status === "Precisa autorizar") return "status-sim";
-      return "status-anexo";
-    }
-
-    function classeAnexo(anexo) {
-      return anexo === "Sim" ? "anexo-sim" : "anexo-nao";
-    }
-
-    function classeTermos(termos) {
-      if (termos === "Sim") return "termos-sim";
-      if (termos === "Não") return "termos-nao";
-      return "termos-vazio";
-    }
-
-    function textoTermos(termos) {
-      return termos && termos.trim() !== "" ? termos : "Em branco";
-    }
-
-    function textoTipo(tipo) {
-      return tipo === "Particular" ? "Particular" : "Normal";
-    }
-
-    function valorExibicao(exame) {
-      return exame.codigo || "";
-    }
-
-    function obterFiltrados() {
-      const termo = busca.value.trim().toLowerCase();
-      const filtroTipo = document.getElementById("filtroTipo").value;
-      const filtroAutorizacao = document.getElementById("filtroAutorizacao").value;
-      const filtroAnexo = document.getElementById("filtroAnexo").value;
-      const filtroTermos = document.getElementById("filtroTermos").value;
-
-      return exames.filter(exame => {
-        const bateTexto =
-          (exame.sigla || "").toLowerCase().includes(termo) ||
-          (exame.nome || "").toLowerCase().includes(termo) ||
-          (exame.codigo || "").toLowerCase().includes(termo) ||
-          (exame.observacao || "").toLowerCase().includes(termo);
-
-        const bateTipo = !filtroTipo || (exame.tipo || "Normal") === filtroTipo;
-        const bateAutorizacao = !filtroAutorizacao || exame.autorizacao === filtroAutorizacao;
-        const bateAnexo = !filtroAnexo || exame.anexo === filtroAnexo;
-
-        let bateTermos = true;
-        if (filtroTermos === "__VAZIO__") {
-          bateTermos = !exame.termos || exame.termos.trim() === "";
-        } else if (filtroTermos) {
-          bateTermos = (exame.termos || "") === filtroTermos;
-        }
-
-        return bateTexto && bateTipo && bateAutorizacao && bateAnexo && bateTermos;
-      });
-    }
-
-    function renderizarTabela(lista) {
-      tabelaExames.innerHTML = "";
-      totalExames.textContent = exames.length;
-      totalEncontrados.textContent = lista.length;
-      totalAutorizar.textContent = exames.filter(exame => exame.autorizacao === "Precisa autorizar" || exame.autorizacao === "Precisa autorizar com anexo").length;
-      totalAnexo.textContent = exames.filter(exame => exame.anexo === "Sim").length;
-      totalParticular.textContent = exames.filter(exame => (exame.tipo || "Normal") === "Particular").length;
-
-      if (lista.length === 0) {
-        semResultado.style.display = "block";
-        return;
-      }
-
-      semResultado.style.display = "none";
-
-      lista.forEach(exame => {
-        const indexOriginal = exames.findIndex(item => item.id === exame.id);
-
-        const tr = document.createElement("tr");
-
-        if ((exame.tipo || "Normal") === "Particular") {
-          tr.classList.add("linha-particular");
-        }
-
-        tr.innerHTML = `
-          <td><span class="badge ${(exame.tipo || "Normal") === "Particular" ? "status-particular" : "status-nao"}">${textoTipo(exame.tipo || "Normal")}</span></td>
-          <td class="sigla">${exame.sigla}</td>
-          <td>${exame.nome}</td>
-          <td class="${(exame.tipo || "Normal") === "Particular" ? "preco" : "codigo"}">${valorExibicao(exame)}</td>
-          <td><span class="badge ${classeAutorizacao(exame.autorizacao)}">${exame.autorizacao}</span></td>
-          <td><span class="badge ${classeAnexo(exame.anexo)}">${exame.anexo}</span></td>
-          <td><span class="badge ${classeTermos(exame.termos || "")}">${textoTermos(exame.termos || "")}</span></td>
-          <td>${exame.observacao || ""}</td>
-          <td>
-            <div class="acoes">
-              <button class="btn btn-verde" onclick="copiarCodigo('${String(exame.codigo).replace(/'/g, "\\'")}')">
-                ${(exame.tipo || "Normal") === "Particular" ? "Copiar preço" : "Copiar código"}
-              </button>
-              <button class="btn btn-laranja" onclick="copiarLinha(${indexOriginal})">Copiar linha</button>
-              <button class="btn btn-azul" onclick="editarExame(${indexOriginal})">Editar</button>
-              <button class="btn btn-vermelho" onclick="excluirExame(${indexOriginal})">Excluir</button>
-            </div>
-          </td>
-        `;
-
-        tabelaExames.appendChild(tr);
-      });
-    }
-
-    function aplicarFiltros() {
-      renderizarTabela(obterFiltrados());
-    }
-
-    function limparBusca() {
-      busca.value = "";
-      document.getElementById("filtroTipo").value = "";
-      document.getElementById("filtroAutorizacao").value = "";
-      document.getElementById("filtroAnexo").value = "";
-      document.getElementById("filtroTermos").value = "";
-      renderizarTabela(exames);
-      busca.focus();
-    }
-
-    function copiarCodigo(codigo) {
-      copiarTexto(codigo, "Valor copiado");
-    }
-
-    function copiarLinha(index) {
-      const exame = exames[index];
-      if (!exame) return;
-
-      const campo = (exame.tipo || "Normal") === "Particular" ? "PREÇO" : "CÓDIGO";
-      const texto = `TIPO: ${textoTipo(exame.tipo || "Normal")} | SIGLA: ${exame.sigla} | NOME: ${exame.nome} | ${campo}: ${exame.codigo} | AUTORIZAÇÃO: ${exame.autorizacao} | ANEXO: ${exame.anexo} | TERMOS: ${textoTermos(exame.termos || "")} | OBS: ${exame.observacao || ""}`;
-      copiarTexto(texto, "Linha copiada");
-    }
-
-    function copiarResultadosVisiveis() {
-      const filtrados = obterFiltrados();
-
-      if (filtrados.length === 0) {
-        mostrarToast("Nenhum resultado para copiar");
-        return;
-      }
-
-      const texto = filtrados.map(exame => {
-        const campo = (exame.tipo || "Normal") === "Particular" ? "PREÇO" : "CÓDIGO";
-        return `${textoTipo(exame.tipo || "Normal")} | ${exame.sigla} | ${exame.nome} | ${campo}: ${exame.codigo} | ${exame.autorizacao} | Anexo: ${exame.anexo} | Termos: ${textoTermos(exame.termos || "")} | Obs: ${exame.observacao || ""}`;
-      }).join("\n");
-
-      copiarTexto(texto, "Resultados visíveis copiados");
-    }
-
-
-    function mostrarFormularioNovo() {
-      limparFormulario();
-      painelFormulario.style.display = "block";
-      document.getElementById("novoSigla").focus();
-      painelFormulario.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    function exportarBackup() {
-      const dataAtual = new Date().toISOString().slice(0, 10);
-      const conteudo = JSON.stringify(exames, null, 2);
-      const arquivo = new Blob([conteudo], { type: "application/json" });
-      const link = document.createElement("a");
-
-      link.href = URL.createObjectURL(arquivo);
-      link.download = `backup-exames-${dataAtual}.json`;
-      link.click();
-
-      URL.revokeObjectURL(link.href);
-      mostrarToast("Backup exportado");
-    }
-
-    function importarBackup(event) {
-      const arquivo = event.target.files[0];
-      if (!arquivo) return;
-
-      const leitor = new FileReader();
-
-      leitor.onload = function(e) {
-        try {
-          const dados = JSON.parse(e.target.result);
-
-          if (!Array.isArray(dados)) {
-            mostrarToast("Arquivo inválido");
-            return;
-          }
-
-          const confirmar = confirm("Importar este backup vai substituir a base atual deste navegador. Deseja continuar?");
-          if (!confirmar) return;
-
-          exames = dados.map(item => ({
-            tipo: item.tipo || "Normal",
-            sigla: item.sigla || "",
-            nome: item.nome || "",
-            codigo: item.codigo || "",
-            autorizacao: item.autorizacao || "Não precisa",
-            anexo: item.anexo || "Não",
-            termos: item.termos || "",
-            observacao: item.observacao || ""
-          }));
-
-          salvarExames();
-          limparFormulario();
-          aplicarFiltros();
-          mostrarToast("Backup importado");
-        } catch (erro) {
-          mostrarToast("Não foi possível importar");
-        } finally {
-          event.target.value = "";
-        }
-      };
-
-      leitor.readAsText(arquivo);
-    }
-
-    function alternarPlaceholderValor() {
-      novoCodigo.placeholder = novoTipo.value === "Particular" ? "PREÇO" : "CÓDIGO";
-    }
-
-    function limparFormulario() {
-      indiceEdicao = null;
-      document.getElementById("formularioExame").classList.remove("campo-edicao");
-      tituloFormulario.textContent = "Adicionar novo exame";
-      btnSalvar.textContent = "Adicionar exame";
-      btnCancelarEdicao.style.display = "none";
-
-      document.getElementById("novoTipo").value = "Normal";
-      document.getElementById("novoSigla").value = "";
-      document.getElementById("novoNome").value = "";
-      document.getElementById("novoCodigo").value = "";
-      document.getElementById("novoAutorizacao").value = "Não precisa";
-      document.getElementById("novoAnexo").value = "Não";
-      document.getElementById("novoTermos").value = "";
-      document.getElementById("novaObservacao").value = "";
-
-      alternarPlaceholderValor();
-    }
-
-    async function salvarExame() {
-      const tipo = document.getElementById("novoTipo").value;
-      const sigla = document.getElementById("novoSigla").value.trim().toUpperCase();
-      const nome = document.getElementById("novoNome").value.trim();
-      const codigo = document.getElementById("novoCodigo").value.trim();
-      const autorizacao = document.getElementById("novoAutorizacao").value;
-      const anexo = document.getElementById("novoAnexo").value;
-      const termos = document.getElementById("novoTermos").value;
-      const observacao = document.getElementById("novaObservacao").value.trim();
-
-      if (!sigla || !nome || !codigo) {
-        alert("Preencha os campos obrigatórios");
-        return;
-      }
-
-      const dados = {
-        tipo,
-        sigla,
-        nome,
-        codigo,
-        autorizacao,
-        anexo,
-        termos,
-        observacao,
-        atualizado_em: new Date().toISOString()
-      };
-
-      let error;
-
-      if (indiceEdicao !== null && exames[indiceEdicao] && exames[indiceEdicao].id) {
-        const resposta = await supabaseClient
-          .from("exames")
-          .update(dados)
-          .eq("id", exames[indiceEdicao].id);
-        error = resposta.error;
-      } else {
-        const resposta = await supabaseClient
-          .from("exames")
-          .insert([dados]);
-        error = resposta.error;
-      }
-
-      if (error) {
-        alert("Erro ao salvar");
-        console.error(error);
-        return;
-      }
-
-      limparFormulario();
-      painelFormulario.style.display = "none";
-      await carregarExamesBanco();
-      mostrarToast(indiceEdicao === null ? "Exame adicionado" : "Exame atualizado");
-    }
-
-    function editarExame(index) {
-      const exame = exames[index];
-      if (!exame) return;
-
-      indiceEdicao = index;
-      painelFormulario.style.display = "block";
-      document.getElementById("formularioExame").classList.add("campo-edicao");
-      tituloFormulario.textContent = "Editar exame";
-      btnSalvar.textContent = "Salvar alteração";
-      btnCancelarEdicao.style.display = "inline-block";
-
-      document.getElementById("novoTipo").value = exame.tipo || "Normal";
-      document.getElementById("novoSigla").value = exame.sigla || "";
-      document.getElementById("novoNome").value = exame.nome || "";
-      document.getElementById("novoCodigo").value = exame.codigo || "";
-      document.getElementById("novoAutorizacao").value = exame.autorizacao || "Não precisa";
-      document.getElementById("novoAnexo").value = exame.anexo || "Não";
-      document.getElementById("novoTermos").value = exame.termos || "";
-      document.getElementById("novaObservacao").value = exame.observacao || "";
-
-      alternarPlaceholderValor();
-      document.getElementById("novoSigla").focus();
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-    }
-
-    function cancelarEdicao() {
-      limparFormulario();
-      painelFormulario.style.display = "none";
-      mostrarToast("Edição cancelada");
-    }
-
-    async function excluirExame(index) {
-      if (index < 0 || index >= exames.length) return;
-      const exame = exames[index];
-      const confirmar = confirm(`Tem certeza que deseja excluir ${exame.sigla} - ${exame.nome}?`);
-      if (!confirmar) return;
-      const { error } = await supabaseClient
-        .from("exames")
-        .delete()
-        .eq("id", exame.id);
-      if (error) {
-        console.error("Erro ao excluir:", error);
-        mostrarToast("Erro ao excluir. Confira as policies do Supabase.");
-        return;
-      }
-      limparFormulario();
-      await carregarExamesBanco();
-      mostrarToast("Exame excluído do banco");
-    }
-
-    busca.addEventListener("input", aplicarFiltros);
-    novoTipo.addEventListener("change", alternarPlaceholderValor);
-
-    alternarPlaceholderValor();
-    carregarExamesBanco();
-  </script>
 </body>
 </html>
