@@ -572,6 +572,105 @@
       }
     }
 
+
+    /* VERSAO PROFISSIONAL COMPACTA */
+    :root {
+      --verde-bio: #22c55e;
+      --verde-escuro: #14532d;
+      --verde-neon: #4ade80;
+      --verde-claro: #ecfdf5;
+      --texto: #172033;
+      --cinza: #667085;
+      --borda: #e5edf5;
+      --sombra: 0 14px 34px rgba(15, 23, 42, 0.10);
+      --sombra-suave: 0 6px 18px rgba(15, 23, 42, 0.07);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 8% 0%, rgba(74, 222, 128, 0.18), transparent 34%),
+        radial-gradient(circle at 95% 12%, rgba(37, 99, 235, 0.10), transparent 30%),
+        linear-gradient(180deg, #f0fdf4 0%, #f7f9fc 340px, #f8fafc 100%);
+    }
+
+    .topo {
+      padding: 28px 16px 60px;
+      background: linear-gradient(135deg, #dcfce7 0%, #86efac 45%, #22c55e 100%);
+      box-shadow: 0 12px 32px rgba(34, 197, 94, 0.18);
+    }
+
+    .topo h1 { font-size: clamp(28px, 3vw, 42px); }
+    .topo p { font-size: 15px; }
+    .container { max-width: 1440px; }
+    .painel { border-radius: 22px; padding: 20px; }
+
+    .tabela-wrap { width: 100%; overflow-x: auto; border-radius: 22px; }
+
+    table { min-width: 1180px !important; table-layout: fixed; }
+
+    th, td { padding: 10px 9px; font-size: 12px; line-height: 1.18; }
+    th { font-size: 10px; letter-spacing: 0.04em; }
+
+    th:nth-child(1), td:nth-child(1) { width: 72px !important; }
+    th:nth-child(2), td:nth-child(2) { width: 105px !important; }
+    th:nth-child(3), td:nth-child(3) { width: 210px !important; }
+    th:nth-child(4), td:nth-child(4) { width: 96px !important; }
+    th:nth-child(5), td:nth-child(5) { width: 150px !important; }
+    th:nth-child(6), td:nth-child(6) { width: 74px !important; }
+    th:nth-child(7), td:nth-child(7) { width: 78px !important; }
+    th:nth-child(8), td:nth-child(8) { width: 88px !important; }
+    th:nth-child(9), td:nth-child(9) { width: 102px !important; }
+    th:nth-child(10), td:nth-child(10) { width: 170px !important; }
+    th:nth-child(11), td:nth-child(11) { width: 175px !important; }
+
+    .sigla, .codigo, .preco { font-size: 12px; }
+
+    .badge {
+      padding: 5px 8px;
+      font-size: 10px;
+      min-width: 36px;
+      max-width: 100%;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.15;
+    }
+
+    .jejum-badge { background: #f59e0b !important; color: white !important; }
+    .jejum-sem { background: #16a34a !important; color: white !important; }
+
+    .acoes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .acoes .btn {
+      padding: 7px 6px;
+      font-size: 10px;
+      border-radius: 9px;
+      min-height: 30px;
+      width: 100%;
+      box-shadow: none;
+    }
+
+    .btn-termo {
+      padding: 7px 8px !important;
+      border-radius: 9px !important;
+      font-size: 10px !important;
+      min-height: 30px;
+      width: 100%;
+      box-shadow: none !important;
+    }
+
+    .busca-area input,
+    .cadastro-grid input,
+    .cadastro-grid select,
+    .cadastro-grid textarea,
+    .filtros select,
+    .btn { border-radius: 12px; }
+
+    @media (max-width: 900px) { table { min-width: 1120px !important; } }
+
   </style>
 </head>
 <body>
@@ -895,18 +994,22 @@
 
     function textoJejum(jejum) {
       const valor = (jejum || "").trim();
-      return valor ? valor : "Sem jejum";
+      if (!valor) return "Sem jejum";
+      const lower = valor.toLowerCase();
+      if (lower === "sem" || lower === "sem jejum" || lower === "nao" || lower === "não") return "Sem jejum";
+      if (/^\d+$/.test(valor)) return `${valor}h`;
+      return valor;
     }
 
     function classeJejum(jejum) {
-      const valor = (jejum || "").trim().toLowerCase();
-      return !valor || valor.includes("sem") ? "jejum-sem" : "jejum-badge";
+      const valor = textoJejum(jejum).toLowerCase();
+      return valor.includes("sem jejum") ? "jejum-sem" : "jejum-badge";
     }
 
     function botaoTermo(link) {
       const valor = (link || "").trim();
       if (!valor) return `<span class="badge termos-vazio">Sem PDF</span>`;
-      return `<a href="${valor}" target="_blank" rel="noopener"><button class="btn btn-termo">Baixar termo</button></a>`;
+      return `<a href="${valor}" target="_blank" rel="noopener"><button class="btn btn-termo">Baixar</button></a>`;
     }
 
     function textoTipo(tipo) {
@@ -997,9 +1100,9 @@
           <td>
             <div class="acoes">
               <button class="btn btn-verde" onclick="copiarCodigo('${String(exame.codigo).replace(/'/g, "\\'")}')">
-                ${(exame.tipo || "Normal") === "Particular" ? "Copiar preço" : "Copiar código"}
+                ${(exame.tipo || "Normal") === "Particular" ? "Preço" : "Código"}
               </button>
-              <button class="btn btn-laranja" onclick="copiarLinha(${indexOriginal})">Copiar linha</button>
+              <button class="btn btn-laranja" onclick="copiarLinha(${indexOriginal})">Linha</button>
               <button class="btn btn-roxo" onclick="editarExame(${indexOriginal})">Editar</button>
               <button class="btn btn-vermelho" onclick="excluirExame(${indexOriginal})">Excluir</button>
             </div>
