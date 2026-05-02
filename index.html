@@ -11,7 +11,7 @@
     }
 
     :root {
-      --verde-bio: #16a34a;
+      --verde-bio: #22c55e;
       --verde-escuro: #064e3b;
       --verde-neon: #22c55e;
       --verde-claro: #dcfce7;
@@ -367,7 +367,7 @@
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      min-width: 1450px;
+      min-width: 1650px;
     }
 
     thead {
@@ -473,6 +473,9 @@
     .termos-vazio { background: #9ca3af; }
     .termos-nao { background: #6b7280; }
     .termos-sim { background: #7c3aed; }
+    .jejum-badge { background: #0ea5e9; }
+    .jejum-sem { background: #6b7280; }
+    .btn-termo { background: linear-gradient(135deg, #0891b2, #2563eb); color: white; }
 
     .rodape {
       text-align: center;
@@ -666,6 +669,8 @@
             <th style="width: 210px;">AUTORIZAÇÃO</th>
             <th style="width: 120px;">ANEXO</th>
             <th style="width: 120px;">TERMOS</th>
+            <th style="width: 130px;">JEJUM</th>
+            <th style="width: 150px;">TERMO PDF</th>
             <th>OBSERVAÇÃO</th>
             <th style="width: 320px;">AÇÕES</th>
           </tr>
@@ -707,6 +712,9 @@
   <option value="Não">Não</option>
   <option value="Sim">Sim</option>
 </select>
+
+        <input id="novoJejum" placeholder="JEJUM (ex: Sem jejum, 8h, 11h)" />
+        <input id="novoLinkTermo" placeholder="LINK DO TERMO PDF" />
       </div>
 
       <div style="margin-top: 10px;">
@@ -822,7 +830,7 @@
       mostrarToast("Carregando exames do banco online...");
       const { data, error } = await supabaseClient
         .from("exames")
-        .select("id, tipo, sigla, nome, codigo, autorizacao, anexo, termos, observacao, criado_em, atualizado_em")
+        .select("id, tipo, sigla, nome, codigo, autorizacao, anexo, termos, tempo_jejum, link_termo, observacao, criado_em, atualizado_em")
         .order("sigla", { ascending: true });
       if (error) {
         console.error("Erro ao carregar exames:", error);
@@ -839,6 +847,8 @@
         autorizacao: item.autorizacao || "Não precisa",
         anexo: item.anexo || "Não",
         termos: item.termos || "",
+        tempo_jejum: item.tempo_jejum || "",
+        link_termo: item.link_termo || "",
         observacao: item.observacao || ""
       }));
       aplicarFiltros();
@@ -883,6 +893,22 @@
       return termos && termos.trim() !== "" ? termos : "Em branco";
     }
 
+    function textoJejum(jejum) {
+      const valor = (jejum || "").trim();
+      return valor ? valor : "Sem jejum";
+    }
+
+    function classeJejum(jejum) {
+      const valor = (jejum || "").trim().toLowerCase();
+      return !valor || valor.includes("sem") ? "jejum-sem" : "jejum-badge";
+    }
+
+    function botaoTermo(link) {
+      const valor = (link || "").trim();
+      if (!valor) return `<span class="badge termos-vazio">Sem PDF</span>`;
+      return `<a href="${valor}" target="_blank" rel="noopener"><button class="btn btn-termo">Baixar termo</button></a>`;
+    }
+
     function textoTipo(tipo) {
       return tipo === "Particular" ? "Particular" : "Normal";
     }
@@ -903,6 +929,8 @@
           (exame.sigla || "").toLowerCase().includes(termo) ||
           (exame.nome || "").toLowerCase().includes(termo) ||
           (exame.codigo || "").toLowerCase().includes(termo) ||
+          (exame.tempo_jejum || "").toLowerCase().includes(termo) ||
+          (exame.link_termo || "").toLowerCase().includes(termo) ||
           (exame.observacao || "").toLowerCase().includes(termo);
 
         const bateTipo = !filtroTipo || (exame.tipo || "Normal") === filtroTipo;
@@ -944,7 +972,9 @@
           item.anexo === exame.anexo &&
           item.observacao === exame.observacao &&
           (item.tipo || "Normal") === (exame.tipo || "Normal") &&
-          (item.termos || "") === (exame.termos || "")
+          (item.termos || "") === (exame.termos || "") &&
+          (item.tempo_jejum || "") === (exame.tempo_jejum || "") &&
+          (item.link_termo || "") === (exame.link_termo || "")
         );
 
         const tr = document.createElement("tr");
@@ -961,6 +991,8 @@
           <td><span class="badge ${classeAutorizacao(exame.autorizacao)}">${exame.autorizacao}</span></td>
           <td><span class="badge ${classeAnexo(exame.anexo)}">${exame.anexo}</span></td>
           <td><span class="badge ${classeTermos(exame.termos || "")}">${textoTermos(exame.termos || "")}</span></td>
+          <td><span class="badge ${classeJejum(exame.tempo_jejum || "")}">${textoJejum(exame.tempo_jejum || "")}</span></td>
+          <td>${botaoTermo(exame.link_termo || "")}</td>
           <td>${exame.observacao || ""}</td>
           <td>
             <div class="acoes">
@@ -1001,7 +1033,7 @@
       if (!exame) return;
 
       const campo = (exame.tipo || "Normal") === "Particular" ? "PREÇO" : "CÓDIGO";
-      const texto = `TIPO: ${textoTipo(exame.tipo || "Normal")} | SIGLA: ${exame.sigla} | NOME: ${exame.nome} | ${campo}: ${exame.codigo} | AUTORIZAÇÃO: ${exame.autorizacao} | ANEXO: ${exame.anexo} | TERMOS: ${textoTermos(exame.termos || "")} | OBS: ${exame.observacao || ""}`;
+      const texto = `TIPO: ${textoTipo(exame.tipo || "Normal")} | SIGLA: ${exame.sigla} | NOME: ${exame.nome} | ${campo}: ${exame.codigo} | AUTORIZAÇÃO: ${exame.autorizacao} | ANEXO: ${exame.anexo} | TERMOS: ${textoTermos(exame.termos || "")} | JEJUM: ${textoJejum(exame.tempo_jejum || "")} | TERMO PDF: ${exame.link_termo || ""} | OBS: ${exame.observacao || ""}`;
       copiarTexto(texto, "Linha copiada");
     }
 
@@ -1015,7 +1047,7 @@
 
       const texto = filtrados.map(exame => {
         const campo = (exame.tipo || "Normal") === "Particular" ? "PREÇO" : "CÓDIGO";
-        return `${textoTipo(exame.tipo || "Normal")} | ${exame.sigla} | ${exame.nome} | ${campo}: ${exame.codigo} | ${exame.autorizacao} | Anexo: ${exame.anexo} | Termos: ${textoTermos(exame.termos || "")} | Obs: ${exame.observacao || ""}`;
+        return `${textoTipo(exame.tipo || "Normal")} | ${exame.sigla} | ${exame.nome} | ${campo}: ${exame.codigo} | ${exame.autorizacao} | Anexo: ${exame.anexo} | Termos: ${textoTermos(exame.termos || "")} | Jejum: ${textoJejum(exame.tempo_jejum || "")} | Termo PDF: ${exame.link_termo || ""} | Obs: ${exame.observacao || ""}`;
       }).join("\n");
 
       copiarTexto(texto, "Resultados visíveis copiados");
@@ -1069,6 +1101,8 @@
             autorizacao: item.autorizacao || "Não precisa",
             anexo: item.anexo || "Não",
             termos: item.termos || "",
+            tempo_jejum: item.tempo_jejum || "",
+            link_termo: item.link_termo || "",
             observacao: item.observacao || ""
           }));
 
@@ -1104,6 +1138,8 @@
       document.getElementById("novoAutorizacao").value = "Não precisa";
       document.getElementById("novoAnexo").value = "Não";
       document.getElementById("novoTermos").value = "";
+      document.getElementById("novoJejum").value = "";
+      document.getElementById("novoLinkTermo").value = "";
       document.getElementById("novaObservacao").value = "";
 
       alternarPlaceholderValor();
@@ -1117,6 +1153,8 @@
       const autorizacao = document.getElementById("novoAutorizacao").value;
       const anexo = document.getElementById("novoAnexo").value;
       const termos = document.getElementById("novoTermos").value;
+      const tempo_jejum = document.getElementById("novoJejum").value.trim();
+      const link_termo = document.getElementById("novoLinkTermo").value.trim();
       const observacao = document.getElementById("novaObservacao").value.trim();
 
       if (!sigla || !nome || !codigo) {
@@ -1124,7 +1162,7 @@
         return;
       }
 
-      const dados = { tipo, sigla, nome, codigo, autorizacao, anexo, termos, observacao };
+      const dados = { tipo, sigla, nome, codigo, autorizacao, anexo, termos, tempo_jejum, link_termo, observacao };
 
       if (indiceEdicao !== null) {
         const exame = exames[indiceEdicao];
@@ -1182,6 +1220,8 @@
       document.getElementById("novoAutorizacao").value = exame.autorizacao || "Não precisa";
       document.getElementById("novoAnexo").value = exame.anexo || "Não";
       document.getElementById("novoTermos").value = exame.termos || "";
+      document.getElementById("novoJejum").value = exame.tempo_jejum || "";
+      document.getElementById("novoLinkTermo").value = exame.link_termo || "";
       document.getElementById("novaObservacao").value = exame.observacao || "";
 
       alternarPlaceholderValor();
@@ -1296,6 +1336,8 @@
         autorizacao: item.autorizacao || "Não precisa",
         anexo: item.anexo || "Não",
         termos: item.termos || "",
+        tempo_jejum: item.tempo_jejum || "",
+        link_termo: item.link_termo || "",
         observacao: item.observacao || ""
       })).filter(item => item.sigla && item.nome && item.codigo);
 
