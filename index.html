@@ -671,14 +671,155 @@
 
     @media (max-width: 900px) { table { min-width: 1120px !important; } }
 
+
+    /* ===== ACABAMENTO PROFISSIONAL FINAL ===== */
+    :root {
+      --verde-bio: #2fbf71;
+      --verde-escuro: #0f5132;
+      --verde-neon: #6ee7a8;
+      --verde-claro: #eefbf4;
+      --azul: #2563eb;
+      --escuro: #111827;
+      --texto: #1f2937;
+      --cinza: #667085;
+      --borda: #e6edf5;
+      --sombra: 0 12px 32px rgba(15, 23, 42, 0.10);
+      --sombra-suave: 0 6px 16px rgba(15, 23, 42, 0.07);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 8% 0%, rgba(110, 231, 168, 0.16), transparent 32%),
+        radial-gradient(circle at 96% 10%, rgba(37, 99, 235, 0.09), transparent 28%),
+        linear-gradient(180deg, #f3fbf6 0%, #f7fafc 330px, #f8fafc 100%);
+    }
+
+    .topo {
+      padding: 26px 16px 56px;
+      background: linear-gradient(135deg, #e8fff1 0%, #b7f7cf 44%, #44c878 100%);
+      box-shadow: 0 10px 26px rgba(34, 197, 94, 0.16);
+    }
+
+    .topo h1 {
+      color: #06351e;
+      font-size: clamp(28px, 3vw, 40px);
+      letter-spacing: -0.9px;
+    }
+
+    .topo p {
+      color: #14532d;
+      opacity: 0.88;
+      font-size: 14px;
+    }
+
+    .selo-sistema {
+      background: rgba(255,255,255,0.82);
+      color: #166534;
+      box-shadow: none;
+    }
+
+    .container {
+      max-width: 1460px;
+      margin-top: -38px;
+    }
+
+    .painel {
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: var(--sombra-suave);
+    }
+
+    .secao-titulo { font-size: 20px; }
+    .subtexto { font-size: 12px; }
+
+    .busca-area input {
+      min-height: 44px;
+      border-color: #d4f5df;
+    }
+
+    .btn {
+      padding: 10px 13px;
+      border-radius: 11px;
+      font-size: 12px;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .btn-verde { background: linear-gradient(135deg, #22a861, #48d184); }
+    .btn-verde-claro { background: #eefbf4; color: #17613a; border: 1px solid #c9f3d8; }
+
+    .resumo-cards { gap: 10px; margin-top: 14px; }
+    .card-resumo { min-height: 72px; border-radius: 15px; padding: 12px; box-shadow: none; }
+    .card-resumo span { font-size: 10px; }
+    .card-resumo strong { margin-top: 5px; font-size: 24px; }
+
+    .tabela-wrap { border-radius: 18px; box-shadow: var(--sombra-suave); }
+
+    table { min-width: 1120px !important; table-layout: fixed; }
+    th, td { padding: 8px 7px; font-size: 11px; line-height: 1.18; }
+    th { font-size: 9px; letter-spacing: 0.035em; }
+
+    th:nth-child(1), td:nth-child(1) { width: 68px !important; }
+    th:nth-child(2), td:nth-child(2) { width: 92px !important; }
+    th:nth-child(3), td:nth-child(3) { width: 205px !important; }
+    th:nth-child(4), td:nth-child(4) { width: 92px !important; }
+    th:nth-child(5), td:nth-child(5) { width: 140px !important; }
+    th:nth-child(6), td:nth-child(6) { width: 64px !important; }
+    th:nth-child(7), td:nth-child(7) { width: 72px !important; }
+    th:nth-child(8), td:nth-child(8) { width: 78px !important; }
+    th:nth-child(9), td:nth-child(9) { width: 92px !important; }
+    th:nth-child(10), td:nth-child(10) { width: 150px !important; }
+    th:nth-child(11), td:nth-child(11) { width: 155px !important; }
+
+    .badge {
+      padding: 4px 6px;
+      font-size: 9px;
+      line-height: 1.12;
+      min-width: 32px;
+      white-space: normal;
+      text-align: center;
+      box-shadow: none;
+    }
+
+    .status-nao, .jejum-sem { background: #20a464 !important; }
+    .status-sim, .jejum-badge { background: #f59e0b !important; }
+    .status-anexo, .anexo-sim { background: #ef4444 !important; }
+    .anexo-nao, .termos-nao { background: #64748b !important; }
+    .termos-vazio { background: #94a3b8 !important; }
+    .termos-sim { background: #7c3aed !important; }
+
+    .acoes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+
+    .acoes .btn,
+    .btn-termo {
+      min-height: 28px !important;
+      padding: 6px 5px !important;
+      font-size: 9px !important;
+      border-radius: 8px !important;
+      width: 100%;
+      box-shadow: none !important;
+    }
+
+    .btn-termo { background: linear-gradient(135deg, #0ea5e9, #2563eb) !important; color: white !important; }
+    .sigla { font-size: 11px; color: #111827; }
+    .codigo, .preco { font-size: 11px; color: #1d4ed8; }
+    tbody tr:hover { background: #f0fdf4; }
+    .painel-formulario { border-top: 4px solid #2563eb; }
+    .rodape { color: #667085; font-size: 12px; }
+
+    @media (max-width: 900px) {
+      table { min-width: 1040px !important; }
+      .topo { padding-bottom: 48px; }
+      .container { margin-top: -32px; }
+    }
+
   </style>
 </head>
 <body>
   <div class="topo">
     <div class="topo-conteudo">
-      <span class="selo-sistema">Ferramenta interna</span>
-      <h1>Central de Consulta de Exames</h1>
-      <p>Consulta operacional de códigos, autorizações, anexos, termos e orientações internas</p>
+      <span class="selo-sistema">Sistema interno</span>
+      <h1>Central Operacional de Exames</h1>
+      <p>Busca rápida, orientações de jejum, termos em PDF e controle de autorização</p>
     </div>
   </div>
 
