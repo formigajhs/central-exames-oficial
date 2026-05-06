@@ -812,7 +812,121 @@
       .container { margin-top: -32px; }
     }
 
-  </style>
+  
+    /* ===== AJUSTE FINAL APENAS DOS BOTÕES E BADGES ===== */
+    .btn {
+      border: 1px solid rgba(15, 23, 42, 0.08) !important;
+      border-radius: 12px !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.01em;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.10) !important;
+      transition: transform .16s ease, box-shadow .16s ease, filter .16s ease !important;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px) !important;
+      filter: brightness(1.02) saturate(0.96) !important;
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.14) !important;
+    }
+
+    .btn:active {
+      transform: translateY(0) !important;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.10) !important;
+    }
+
+    .btn-limpar {
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+      color: #334155 !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    .btn-azul {
+      background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+      color: #ffffff !important;
+    }
+
+    .btn-verde {
+      background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+      color: #ffffff !important;
+    }
+
+    .btn-verde-claro {
+      background: linear-gradient(135deg, #ecfdf5, #dcfce7) !important;
+      color: #166534 !important;
+      border-color: #bbf7d0 !important;
+    }
+
+    .btn-laranja {
+      background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+      color: #ffffff !important;
+    }
+
+    .btn-vermelho {
+      background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+      color: #ffffff !important;
+    }
+
+    .btn-roxo {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+      color: #ffffff !important;
+    }
+
+    .btn-termo {
+      background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255,255,255,0.18) !important;
+      text-decoration: none !important;
+    }
+
+    .badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 999px !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      text-align: center !important;
+      border: 1px solid rgba(255,255,255,0.18) !important;
+      box-shadow: 0 2px 5px rgba(15, 23, 42, 0.10) !important;
+      filter: saturate(0.92) !important;
+      white-space: normal !important;
+      word-break: normal !important;
+      overflow-wrap: break-word !important;
+    }
+
+    .status-nao,
+    .jejum-sem {
+      background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    }
+
+    .status-sim,
+    .jejum-badge {
+      background: linear-gradient(135deg, #2ff009, #d97706) !important;
+    }
+
+    .status-anexo,
+    .anexo-sim {
+      background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    }
+
+    .status-particular {
+      background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    }
+
+    .anexo-nao,
+    .termos-nao {
+      background: linear-gradient(135deg, #64748b, #475569) !important;
+    }
+
+    .termos-vazio {
+      background: linear-gradient(135deg, #94a3b8, #64748b) !important;
+    }
+
+    .termos-sim {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+    }
+
+</style>
 </head>
 <body>
   <div class="topo">
