@@ -452,29 +452,56 @@
 
     /* CORREÇÃO DOS BOTÕES (BADGES) PARA FORMATO OVAL E TEXTO BRANCO */
     .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 16px;
-      border-radius: 999px; /* Pill-shape */
-      font-size: 13px;
-      font-weight: 700;
-      color: #ffffff !important; /* Texto branco como na foto */
-      white-space: nowrap;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombreamento suave */
-      min-width: 110px;
-      text-align: center;
-    }
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  min-width: 105px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
 
-    .status-nao { background-color: #22c55e; }        /* Verde */
-    .status-sim { background-color: #f59e0b; }        /* Laranja */
-    .status-anexo { background-color: #dc2626; }      /* Vermelho */
-    .status-particular { background-color: #2563eb; }  /* Azul */
-    .anexo-nao { background-color: #64748b; }         /* Cinza */
-    .anexo-sim { background-color: #dc2626; }         /* Vermelho */
-    .termos-vazio { background-color: #94a3b8; }      /* Cinza claro para "Em branco" */
-    .termos-nao { background-color: #64748b; }        /* Cinza */
-    .termos-sim { background-color: #7c3aed; }        /* Roxo */
+.status-nao {
+  background: #16a34a;
+}
+
+.status-sim {
+  background: #d97706;
+}
+
+.status-anexo {
+  background: #dc2626;
+}
+
+.status-particular {
+  background: #2563eb;
+}
+
+.anexo-nao {
+  background: #475569;
+}
+
+.anexo-sim {
+  background: #dc2626;
+}
+
+.termos-vazio {
+  background: #94a3b8;
+}
+
+.termos-nao {
+  background: #475569;
+}
+
+.termos-sim {
+  background: #7c3aed;
+}
 
     .rodape {
       text-align: center;
