@@ -3,57 +3,174 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Consulta de Exames</title>
+  <title>Central de Consulta de Exames</title>
   <style>
+
     * {
       box-sizing: border-box;
     }
 
+    :root {
+      --verde-bio: #22c55e;
+      --verde-escuro: #064e3b;
+      --verde-neon: #22c55e;
+      --verde-claro: #dcfce7;
+      --azul: #2563eb;
+      --azul-escuro: #1e40af;
+      --roxo: #7c3aed;
+      --laranja: #f59e0b;
+      --vermelho: #dc2626;
+      --escuro: #0f172a;
+      --texto: #1f2937;
+      --cinza: #64748b;
+      --borda: #dbe4ee;
+      --branco: #ffffff;
+      --sombra: 0 18px 45px rgba(15, 23, 42, 0.12);
+      --sombra-suave: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f3f6fb;
-      color: #1f2937;
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(34, 197, 94, 0.28), transparent 34%),
+        radial-gradient(circle at 95% 12%, rgba(37, 99, 235, 0.13), transparent 30%),
+        linear-gradient(180deg, #ecfdf5 0%, #f3f6fb 360px, #f7fafc 100%);
+      color: var(--texto);
     }
 
     .topo {
-      background: #0f172a;
-      color: white;
-      padding: 24px 16px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.34), transparent 28%),
+        linear-gradient(135deg, #bbf7d0 0%, #4ade80 42%, #16a34a 100%);
+      color: #052e16;
+      padding: 34px 16px 72px;
       text-align: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      box-shadow: 0 16px 40px rgba(22, 163, 74, 0.22);
+      border-bottom: 1px solid rgba(255,255,255,0.55);
+    }
+
+    .topo::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -110px -80px;
+      height: 180px;
+      background: rgba(255,255,255,0.30);
+      border-radius: 50%;
+      filter: blur(2px);
+    }
+
+    .topo-conteudo {
+      position: relative;
+      z-index: 1;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .selo-sistema {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.78);
+      color: #14532d;
+      border: 1px solid rgba(22, 101, 52, 0.18);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 18px rgba(22, 101, 52, 0.10);
+    }
+
+    .selo-sistema::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 99px;
+      background: #22c55e;
+      box-shadow: 0 0 0 5px rgba(34,197,94,0.16);
     }
 
     .topo h1 {
       margin: 0;
-      font-size: 28px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.05;
+      letter-spacing: -1.2px;
+      font-weight: 900;
     }
 
     .topo p {
-      margin: 8px 0 0;
-      opacity: 0.9;
-      font-size: 14px;
+      margin: 12px 0 0;
+      opacity: 0.92;
+      font-size: 16px;
+      font-weight: 500;
     }
 
     .container {
-      max-width: 1500px;
-      margin: 24px auto;
-      padding: 0 16px 32px;
+      max-width: 1520px;
+      margin: -46px auto 28px;
+      padding: 0 18px 40px;
+      position: relative;
+      z-index: 2;
     }
 
     .painel {
-      background: white;
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(219, 228, 238, 0.92);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: var(--sombra);
+      margin-bottom: 22px;
+      backdrop-filter: blur(12px);
     }
 
-    .busca-area, .cadastro-grid, .filtros {
+    .painel-destaque {
+      border-top: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .painel-destaque::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      background: linear-gradient(90deg, #16a34a, #22c55e, #2563eb, #7c3aed);
+    }
+
+    .secao-titulo {
+      margin: 0 0 8px;
+      font-size: 22px;
+      color: #0f172a;
+      letter-spacing: -0.4px;
+      font-weight: 900;
+    }
+
+    .subtexto {
+      margin: 0 0 16px;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .busca-area,
+    .cadastro-grid,
+    .filtros,
+    .linha-acoes-topo,
+    .bloco-acoes {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       align-items: center;
+    }
+
+    .linha-acoes-topo {
+      padding: 14px 0 4px;
     }
 
     .busca-area input,
@@ -61,27 +178,35 @@
     .cadastro-grid select,
     .cadastro-grid textarea,
     .filtros select {
-      padding: 12px 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
+      padding: 13px 15px;
+      border: 1px solid var(--borda);
+      border-radius: 14px;
       font-size: 14px;
       outline: none;
+      background: #ffffff;
+      color: #111827;
+      transition: 0.18s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
     }
 
     .busca-area input {
       flex: 1;
-      min-width: 260px;
+      min-width: 320px;
+      font-size: 15px;
+      border: 1px solid #bbf7d0;
+      min-height: 48px;
+      background: linear-gradient(180deg, #ffffff, #fbfffd);
     }
 
     .cadastro-grid input,
     .cadastro-grid select {
-      min-width: 140px;
+      min-width: 160px;
       flex: 1;
     }
 
     .cadastro-grid textarea {
       width: 100%;
-      min-height: 80px;
+      min-height: 82px;
       resize: vertical;
       font-family: Arial, sans-serif;
     }
@@ -91,22 +216,30 @@
     .cadastro-grid select:focus,
     .cadastro-grid textarea:focus,
     .filtros select:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      border-color: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
     }
 
     .btn {
       border: none;
-      border-radius: 10px;
+      border-radius: 14px;
       padding: 12px 16px;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 900;
       font-size: 14px;
-      transition: 0.2s;
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10);
+      white-space: nowrap;
     }
 
     .btn:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      filter: brightness(1.03);
+      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.14);
+    }
+
+    .btn:active {
+      transform: translateY(0);
     }
 
     .btn-limpar {
@@ -115,27 +248,33 @@
     }
 
     .btn-azul {
-      background: #2563eb;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
       color: white;
     }
 
     .btn-verde {
-      background: #16a34a;
+      background: linear-gradient(135deg, #16a34a, #22c55e);
       color: white;
     }
 
+    .btn-verde-claro {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
     .btn-laranja {
-      background: #f59e0b;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
       color: white;
     }
 
     .btn-vermelho {
-      background: #dc2626;
+      background: linear-gradient(135deg, #dc2626, #ef4444);
       color: white;
     }
 
     .btn-roxo {
-      background: #7c3aed;
+      background: linear-gradient(135deg, #7c3aed, #9333ea);
       color: white;
     }
 
@@ -145,150 +284,231 @@
       color: #4b5563;
     }
 
-    .secao-titulo {
-      margin: 0 0 14px;
-      font-size: 18px;
+    .resumo-cards {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .card-resumo {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 15px;
+      min-height: 88px;
+      box-shadow: var(--sombra-suave);
+    }
+
+    .card-resumo::after {
+      content: "";
+      position: absolute;
+      right: -18px;
+      top: -18px;
+      width: 72px;
+      height: 72px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.04);
+    }
+
+    .card-resumo span {
+      display: block;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .card-resumo strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 30px;
       color: #0f172a;
+      letter-spacing: -0.8px;
+    }
+
+    .card-resumo.verde {
+      background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 100%);
+      border-color: #bbf7d0;
+    }
+
+    .card-resumo.azul {
+      background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+      border-color: #bfdbfe;
+    }
+
+    .card-resumo.laranja {
+      background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+      border-color: #fde68a;
+    }
+
+    .card-resumo.vermelho {
+      background: linear-gradient(180deg, #fef2f2 0%, #ffffff 100%);
+      border-color: #fecaca;
+    }
+
+    .card-resumo.roxo {
+      background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%);
+      border-color: #ddd6fe;
     }
 
     .tabela-wrap {
       overflow-x: auto;
       background: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+      border-radius: 24px;
+      box-shadow: var(--sombra);
+      border: 1px solid rgba(219, 228, 238, 0.92);
     }
 
     table {
       width: 100%;
-      border-collapse: collapse;
-      min-width: 1450px;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1650px;
     }
 
     thead {
-      background: #111827;
+      background: linear-gradient(135deg, #0f172a 0%, #14532d 100%);
       color: white;
     }
 
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: linear-gradient(135deg, #0f172a 0%, #14532d 100%);
+    }
+
     th, td {
-      padding: 14px 12px;
+      padding: 15px 13px;
       text-align: left;
       border-bottom: 1px solid #e5e7eb;
       vertical-align: middle;
       font-size: 14px;
     }
 
+    th {
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    tbody tr {
+      transition: background .15s ease, transform .15s ease;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fbfdff;
+    }
+
     tbody tr:hover {
-      background: #f9fafb;
+      background: #ecfdf5;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
     }
 
     .linha-particular {
-      background: rgba(37, 99, 235, 0.06);
+      background: rgba(37, 99, 235, 0.07) !important;
     }
 
     .sigla {
-      font-weight: bold;
+      font-weight: 900;
       color: #0f172a;
       white-space: nowrap;
+      letter-spacing: 0.02em;
     }
 
-    .codigo {
-      font-weight: bold;
+    .codigo,
+    .preco {
+      font-weight: 900;
       color: #1d4ed8;
       white-space: nowrap;
     }
 
     .preco {
-      font-weight: bold;
       color: #2563eb;
-      white-space: nowrap;
     }
 
     .acoes {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(92px, 1fr));
       gap: 8px;
-      flex-wrap: wrap;
+      align-items: center;
     }
 
     .acoes .btn {
-      padding: 8px 12px;
-      font-size: 13px;
+      padding: 8px 10px;
+      font-size: 12px;
+      border-radius: 10px;
+      min-height: 34px;
+      box-shadow: none;
     }
 
     .badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 7px 10px;
       border-radius: 999px;
       font-size: 12px;
-      font-weight: bold;
+      font-weight: 900;
       color: white;
       white-space: nowrap;
+      min-width: 46px;
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,0.10);
     }
 
-    .status-nao {
-      background: #16a34a;
-    }
-
-    .status-sim {
-      background: #f59e0b;
-    }
-
-    .status-anexo {
-      background: #dc2626;
-    }
-
-    .status-particular {
-      background: #2563eb;
-    }
-
-    .anexo-nao {
-      background: #6b7280;
-    }
-
-    .anexo-sim {
-      background: #dc2626;
-    }
-
-    .termos-vazio {
-      background: #9ca3af;
-    }
-
-    .termos-nao {
-      background: #6b7280;
-    }
-
-    .termos-sim {
-      background: #7c3aed;
-    }
+    .status-nao { background: #16a34a; }
+    .status-sim { background: #f59e0b; }
+    .status-anexo { background: #dc2626; }
+    .status-particular { background: #2563eb; }
+    .anexo-nao { background: #6b7280; }
+    .anexo-sim { background: #dc2626; }
+    .termos-vazio { background: #9ca3af; }
+    .termos-nao { background: #6b7280; }
+    .termos-sim { background: #7c3aed; }
+    .jejum-badge { background: #0ea5e9; }
+    .jejum-sem { background: #6b7280; }
+    .btn-termo { background: linear-gradient(135deg, #0891b2, #2563eb); color: white; }
 
     .rodape {
       text-align: center;
       font-size: 13px;
-      color: #6b7280;
-      margin-top: 18px;
+      color: #64748b;
+      margin-top: 20px;
+      font-weight: 600;
     }
 
     .sem-resultado {
       text-align: center;
-      padding: 24px;
+      padding: 30px;
       color: #6b7280;
-      font-weight: bold;
+      font-weight: 900;
+      background: #fff;
     }
 
     .toast {
       position: fixed;
-      right: 16px;
-      bottom: 16px;
-      background: #111827;
+      right: 18px;
+      bottom: 18px;
+      background: #0f172a;
       color: white;
-      padding: 12px 16px;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      padding: 14px 18px;
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.25);
       opacity: 0;
       pointer-events: none;
-      transform: translateY(10px);
+      transform: translateY(12px);
       transition: 0.25s;
       z-index: 999;
       font-size: 14px;
+      font-weight: 800;
     }
 
     .toast.show {
@@ -297,56 +517,33 @@
       transform: translateY(0);
     }
 
-    .bloco-acoes {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 14px;
+    .painel-formulario {
+      border-top: 5px solid #2563eb;
     }
 
     .campo-edicao {
       background: #fff7ed;
       border: 1px solid #fdba74;
+      border-radius: 16px;
+      padding: 12px;
     }
 
-
-
-    #btnTopo {
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      width: 52px;
-      height: 52px;
-      border: none;
-      border-radius: 50%;
-      background: #2563eb;
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-      z-index: 9999;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(10px);
-      transition: 0.25s;
+    .arquivo-escondido {
+      display: none;
     }
 
-    #btnTopo.show {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    #btnTopo:hover {
-      transform: translateY(-2px);
-      background: #1d4ed8;
+    @media (max-width: 1100px) {
+      .resumo-cards {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+      }
     }
 
     @media (max-width: 900px) {
       .busca-area,
       .cadastro-grid,
-      .filtros {
+      .filtros,
+      .linha-acoes-topo,
+      .bloco-acoes {
         flex-direction: column;
         align-items: stretch;
       }
@@ -356,20 +553,280 @@
       }
 
       .topo h1 {
-        font-size: 22px;
+        font-size: 28px;
+      }
+
+      .container {
+        margin-top: -34px;
       }
     }
+
+    @media (max-width: 560px) {
+      .resumo-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .painel {
+        padding: 16px;
+        border-radius: 18px;
+      }
+    }
+
+
+    /* VERSAO PROFISSIONAL COMPACTA */
+    :root {
+      --verde-bio: #22c55e;
+      --verde-escuro: #14532d;
+      --verde-neon: #4ade80;
+      --verde-claro: #ecfdf5;
+      --texto: #172033;
+      --cinza: #667085;
+      --borda: #e5edf5;
+      --sombra: 0 14px 34px rgba(15, 23, 42, 0.10);
+      --sombra-suave: 0 6px 18px rgba(15, 23, 42, 0.07);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 8% 0%, rgba(74, 222, 128, 0.18), transparent 34%),
+        radial-gradient(circle at 95% 12%, rgba(37, 99, 235, 0.10), transparent 30%),
+        linear-gradient(180deg, #f0fdf4 0%, #f7f9fc 340px, #f8fafc 100%);
+    }
+
+    .topo {
+      padding: 28px 16px 60px;
+      background: linear-gradient(135deg, #dcfce7 0%, #86efac 45%, #22c55e 100%);
+      box-shadow: 0 12px 32px rgba(34, 197, 94, 0.18);
+    }
+
+    .topo h1 { font-size: clamp(28px, 3vw, 42px); }
+    .topo p { font-size: 15px; }
+    .container { max-width: 1440px; }
+    .painel { border-radius: 22px; padding: 20px; }
+
+    .tabela-wrap { width: 100%; overflow-x: auto; border-radius: 22px; }
+
+    table { min-width: 1180px !important; table-layout: fixed; }
+
+    th, td { padding: 10px 9px; font-size: 12px; line-height: 1.18; }
+    th { font-size: 10px; letter-spacing: 0.04em; }
+
+    th:nth-child(1), td:nth-child(1) { width: 72px !important; }
+    th:nth-child(2), td:nth-child(2) { width: 105px !important; }
+    th:nth-child(3), td:nth-child(3) { width: 210px !important; }
+    th:nth-child(4), td:nth-child(4) { width: 96px !important; }
+    th:nth-child(5), td:nth-child(5) { width: 150px !important; }
+    th:nth-child(6), td:nth-child(6) { width: 74px !important; }
+    th:nth-child(7), td:nth-child(7) { width: 78px !important; }
+    th:nth-child(8), td:nth-child(8) { width: 88px !important; }
+    th:nth-child(9), td:nth-child(9) { width: 102px !important; }
+    th:nth-child(10), td:nth-child(10) { width: 170px !important; }
+    th:nth-child(11), td:nth-child(11) { width: 175px !important; }
+
+    .sigla, .codigo, .preco { font-size: 12px; }
+
+    .badge {
+      padding: 5px 8px;
+      font-size: 10px;
+      min-width: 36px;
+      max-width: 100%;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.15;
+    }
+
+    .jejum-badge { background: #f59e0b !important; color: white !important; }
+    .jejum-sem { background: #16a34a !important; color: white !important; }
+
+    .acoes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .acoes .btn {
+      padding: 7px 6px;
+      font-size: 10px;
+      border-radius: 9px;
+      min-height: 30px;
+      width: 100%;
+      box-shadow: none;
+    }
+
+    .btn-termo {
+      padding: 7px 8px !important;
+      border-radius: 9px !important;
+      font-size: 10px !important;
+      min-height: 30px;
+      width: 100%;
+      box-shadow: none !important;
+    }
+
+    .busca-area input,
+    .cadastro-grid input,
+    .cadastro-grid select,
+    .cadastro-grid textarea,
+    .filtros select,
+    .btn { border-radius: 12px; }
+
+    @media (max-width: 900px) { table { min-width: 1120px !important; } }
+
+
+    /* ===== ACABAMENTO PROFISSIONAL FINAL ===== */
+    :root {
+      --verde-bio: #2fbf71;
+      --verde-escuro: #0f5132;
+      --verde-neon: #6ee7a8;
+      --verde-claro: #eefbf4;
+      --azul: #2563eb;
+      --escuro: #111827;
+      --texto: #1f2937;
+      --cinza: #667085;
+      --borda: #e6edf5;
+      --sombra: 0 12px 32px rgba(15, 23, 42, 0.10);
+      --sombra-suave: 0 6px 16px rgba(15, 23, 42, 0.07);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 8% 0%, rgba(110, 231, 168, 0.16), transparent 32%),
+        radial-gradient(circle at 96% 10%, rgba(37, 99, 235, 0.09), transparent 28%),
+        linear-gradient(180deg, #f3fbf6 0%, #f7fafc 330px, #f8fafc 100%);
+    }
+
+    .topo {
+      padding: 26px 16px 56px;
+      background: linear-gradient(135deg, #e8fff1 0%, #b7f7cf 44%, #44c878 100%);
+      box-shadow: 0 10px 26px rgba(34, 197, 94, 0.16);
+    }
+
+    .topo h1 {
+      color: #06351e;
+      font-size: clamp(28px, 3vw, 40px);
+      letter-spacing: -0.9px;
+    }
+
+    .topo p {
+      color: #14532d;
+      opacity: 0.88;
+      font-size: 14px;
+    }
+
+    .selo-sistema {
+      background: rgba(255,255,255,0.82);
+      color: #166534;
+      box-shadow: none;
+    }
+
+    .container {
+      max-width: 1460px;
+      margin-top: -38px;
+    }
+
+    .painel {
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: var(--sombra-suave);
+    }
+
+    .secao-titulo { font-size: 20px; }
+    .subtexto { font-size: 12px; }
+
+    .busca-area input {
+      min-height: 44px;
+      border-color: #d4f5df;
+    }
+
+    .btn {
+      padding: 10px 13px;
+      border-radius: 11px;
+      font-size: 12px;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .btn-verde { background: linear-gradient(135deg, #22a861, #48d184); }
+    .btn-verde-claro { background: #eefbf4; color: #17613a; border: 1px solid #c9f3d8; }
+
+    .resumo-cards { gap: 10px; margin-top: 14px; }
+    .card-resumo { min-height: 72px; border-radius: 15px; padding: 12px; box-shadow: none; }
+    .card-resumo span { font-size: 10px; }
+    .card-resumo strong { margin-top: 5px; font-size: 24px; }
+
+    .tabela-wrap { border-radius: 18px; box-shadow: var(--sombra-suave); }
+
+    table { min-width: 1120px !important; table-layout: fixed; }
+    th, td { padding: 8px 7px; font-size: 11px; line-height: 1.18; }
+    th { font-size: 9px; letter-spacing: 0.035em; }
+
+    th:nth-child(1), td:nth-child(1) { width: 68px !important; }
+    th:nth-child(2), td:nth-child(2) { width: 92px !important; }
+    th:nth-child(3), td:nth-child(3) { width: 205px !important; }
+    th:nth-child(4), td:nth-child(4) { width: 92px !important; }
+    th:nth-child(5), td:nth-child(5) { width: 140px !important; }
+    th:nth-child(6), td:nth-child(6) { width: 64px !important; }
+    th:nth-child(7), td:nth-child(7) { width: 72px !important; }
+    th:nth-child(8), td:nth-child(8) { width: 78px !important; }
+    th:nth-child(9), td:nth-child(9) { width: 92px !important; }
+    th:nth-child(10), td:nth-child(10) { width: 150px !important; }
+    th:nth-child(11), td:nth-child(11) { width: 155px !important; }
+
+    .badge {
+      padding: 4px 6px;
+      font-size: 9px;
+      line-height: 1.12;
+      min-width: 32px;
+      white-space: normal;
+      text-align: center;
+      box-shadow: none;
+    }
+
+    .status-nao, .jejum-sem { background: #20a464 !important; }
+    .status-sim, .jejum-badge { background: #f59e0b !important; }
+    .status-anexo, .anexo-sim { background: #ef4444 !important; }
+    .anexo-nao, .termos-nao { background: #64748b !important; }
+    .termos-vazio { background: #94a3b8 !important; }
+    .termos-sim { background: #7c3aed !important; }
+
+    .acoes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+
+    .acoes .btn,
+    .btn-termo {
+      min-height: 28px !important;
+      padding: 6px 5px !important;
+      font-size: 9px !important;
+      border-radius: 8px !important;
+      width: 100%;
+      box-shadow: none !important;
+    }
+
+    .btn-termo { background: linear-gradient(135deg, #0ea5e9, #2563eb) !important; color: white !important; }
+    .sigla { font-size: 11px; color: #111827; }
+    .codigo, .preco { font-size: 11px; color: #1d4ed8; }
+    tbody tr:hover { background: #f0fdf4; }
+    .painel-formulario { border-top: 4px solid #2563eb; }
+    .rodape { color: #667085; font-size: 12px; }
+
+    @media (max-width: 900px) {
+      table { min-width: 1040px !important; }
+      .topo { padding-bottom: 48px; }
+      .container { margin-top: -32px; }
+    }
+
   </style>
 </head>
 <body>
   <div class="topo">
-    <h1>Consulta de Exames</h1>
-    <p>Pesquisa, cópia rápida e controle de autorização</p>
+    <div class="topo-conteudo">
+      <span class="selo-sistema">Sistema interno</span>
+      <h1>Central Operacional de Exames</h1>
+      <p>Busca rápida, orientações de jejum, termos em PDF e controle de autorização</p>
+    </div>
   </div>
 
   <div class="container">
-    <div class="painel">
+    <div class="painel painel-destaque">
       <h2 class="secao-titulo">Pesquisar exames</h2>
+      <p class="subtexto">Use a busca para localizar por sigla, nome, código, preço ou observação.</p>
 
       <div class="busca-area">
         <input
@@ -379,6 +836,14 @@
         />
         <button class="btn btn-limpar" onclick="limparBusca()">Limpar busca</button>
         <button class="btn btn-azul" onclick="copiarResultadosVisiveis()">Copiar resultados visíveis</button>
+      </div>
+
+      <div class="linha-acoes-topo">
+        <button class="btn btn-verde" onclick="mostrarFormularioNovo()">+ Novo exame</button>
+        <button class="btn btn-verde" onclick="carregarExamesBanco()">Atualizar dados</button>
+        <button class="btn btn-verde-claro" onclick="exportarBackup()">Exportar backup</button>
+        <button class="btn btn-azul" onclick="importarExamesDasFotos()">Importar lista completa</button>
+        <span class="subtexto">Sistema editável conectado ao banco online.</span>
       </div>
 
       <div class="filtros" style="margin-top: 12px;">
@@ -409,9 +874,27 @@
 </select>
       </div>
 
-      <div class="info">
-        Total cadastrados: <strong id="totalExames"></strong> |
-        Encontrados: <strong id="totalEncontrados"></strong>
+      <div class="resumo-cards">
+        <div class="card-resumo verde">
+          <span>Total de exames</span>
+          <strong id="totalExames"></strong>
+        </div>
+        <div class="card-resumo azul">
+          <span>Encontrados</span>
+          <strong id="totalEncontrados"></strong>
+        </div>
+        <div class="card-resumo laranja">
+          <span>Precisam autorizar</span>
+          <strong id="totalAutorizar"></strong>
+        </div>
+        <div class="card-resumo vermelho">
+          <span>Com anexo</span>
+          <strong id="totalAnexo"></strong>
+        </div>
+        <div class="card-resumo roxo">
+          <span>Particulares</span>
+          <strong id="totalParticular"></strong>
+        </div>
       </div>
     </div>
 
@@ -426,6 +909,8 @@
             <th style="width: 210px;">AUTORIZAÇÃO</th>
             <th style="width: 120px;">ANEXO</th>
             <th style="width: 120px;">TERMOS</th>
+            <th style="width: 130px;">JEJUM</th>
+            <th style="width: 150px;">TERMO PDF</th>
             <th>OBSERVAÇÃO</th>
             <th style="width: 320px;">AÇÕES</th>
           </tr>
@@ -437,8 +922,9 @@
       </div>
     </div>
 
-    <div class="painel" style="margin-top: 20px;">
+    <div class="painel painel-formulario" id="painelFormulario" style="margin-top: 20px; display:none;">
       <h2 class="secao-titulo" id="tituloFormulario">Adicionar novo exame</h2>
+      <p class="subtexto">Cadastre ou edite exames com cuidado. Use o backup antes de grandes alterações.</p>
 
       <div class="cadastro-grid" id="formularioExame">
         <select id="novoTipo" onchange="alternarPlaceholderValor()">
@@ -466,6 +952,9 @@
   <option value="Não">Não</option>
   <option value="Sim">Sim</option>
 </select>
+
+        <input id="novoJejum" placeholder="JEJUM (ex: Sem jejum, 8h, 11h)" />
+        <input id="novoLinkTermo" placeholder="LINK DO TERMO PDF" />
       </div>
 
       <div style="margin-top: 10px;">
@@ -480,15 +969,19 @@
     </div>
 
     <div class="rodape">
-      Base local para consulta rápida no trabalho
+      Ferramenta interna de apoio operacional | Dados conectados ao Supabase
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <button id="btnTopo" title="Subir ao topo" aria-label="Subir ao topo">↑</button>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
+    const SUPABASE_URL = "https://kgznlatjntdwnzsrcmqp.supabase.co";
+    const SUPABASE_KEY = "sb_publishable__ODBzBpNarobgI45tj5cGQ_A7AM4Qq3";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     const examesPadrao = [
       { tipo: "Normal", sigla: "HEMO", nome: "HEMOGRAMA COMPLETO", codigo: "11043202", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
       { tipo: "Normal", sigla: "URI", nome: "URINA TIPO I", codigo: "11141000", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
@@ -554,14 +1047,17 @@
       { tipo: "Normal", sigla: "LATEX", nome: "FATOR REUMATOIDE QUANTITATIVO", codigo: "11061278", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" }
     ];
 
-    const chaveStorage = "exames_sistema_v3_base_usuario";
-    let exames = migrarOuCarregarBase();
+    let exames = [];
     let indiceEdicao = null;
 
     const tabelaExames = document.getElementById("tabelaExames");
     const busca = document.getElementById("busca");
     const totalExames = document.getElementById("totalExames");
     const totalEncontrados = document.getElementById("totalEncontrados");
+    const totalAutorizar = document.getElementById("totalAutorizar");
+    const totalAnexo = document.getElementById("totalAnexo");
+    const totalParticular = document.getElementById("totalParticular");
+    const painelFormulario = document.getElementById("painelFormulario");
     const semResultado = document.getElementById("semResultado");
     const toast = document.getElementById("toast");
     const btnSalvar = document.getElementById("btnSalvar");
@@ -569,37 +1065,38 @@
     const tituloFormulario = document.getElementById("tituloFormulario");
     const novoCodigo = document.getElementById("novoCodigo");
     const novoTipo = document.getElementById("novoTipo");
-    const btnTopo = document.getElementById("btnTopo");
 
-    function migrarOuCarregarBase() {
-      const baseNova = localStorage.getItem(chaveStorage);
-      if (baseNova) {
-        return JSON.parse(baseNova);
+    async function carregarExamesBanco() {
+      mostrarToast("Carregando exames do banco online...");
+      const { data, error } = await supabaseClient
+        .from("exames")
+        .select("id, tipo, sigla, nome, codigo, autorizacao, anexo, termos, tempo_jejum, link_termo, observacao, criado_em, atualizado_em")
+        .order("sigla", { ascending: true });
+      if (error) {
+        console.error("Erro ao carregar exames:", error);
+        mostrarToast("Erro ao carregar exames do Supabase");
+        renderizarTabela([]);
+        return;
       }
-
-      const baseAntigaV2 = localStorage.getItem("exames_sistema_v2");
-      if (baseAntigaV2) {
-        const dadosAntigos = JSON.parse(baseAntigaV2);
-        const migrados = dadosAntigos.map(item => ({
-          tipo: item.tipo || "Normal",
-          sigla: item.sigla || "",
-          nome: item.nome || "",
-          codigo: item.codigo || "",
-          autorizacao: item.autorizacao === "Não precisaa" ? "Não precisa" : (item.autorizacao || "Não precisa"),
-          anexo: item.anexo || "Não",
-          termos: item.termos || "",
-          observacao: item.observacao || ""
-        }));
-        localStorage.setItem(chaveStorage, JSON.stringify(migrados));
-        return migrados;
-      }
-
-      localStorage.setItem(chaveStorage, JSON.stringify(examesPadrao));
-      return examesPadrao;
+      exames = (data || []).map(item => ({
+        id: item.id,
+        tipo: item.tipo || "Normal",
+        sigla: item.sigla || "",
+        nome: item.nome || "",
+        codigo: item.codigo || "",
+        autorizacao: item.autorizacao || "Não precisa",
+        anexo: item.anexo || "Não",
+        termos: item.termos || "",
+        tempo_jejum: item.tempo_jejum || "",
+        link_termo: item.link_termo || "",
+        observacao: item.observacao || ""
+      }));
+      aplicarFiltros();
+      mostrarToast("Dados carregados do banco online");
     }
 
-    function salvarExames() {
-      localStorage.setItem(chaveStorage, JSON.stringify(exames));
+    async function salvarExames() {
+      // Agora os dados ficam no Supabase. Esta função ficou apenas para compatibilidade.
     }
 
     function mostrarToast(texto) {
@@ -636,6 +1133,26 @@
       return termos && termos.trim() !== "" ? termos : "Em branco";
     }
 
+    function textoJejum(jejum) {
+      const valor = (jejum || "").trim();
+      if (!valor) return "Sem jejum";
+      const lower = valor.toLowerCase();
+      if (lower === "sem" || lower === "sem jejum" || lower === "nao" || lower === "não") return "Sem jejum";
+      if (/^\d+$/.test(valor)) return `${valor}h`;
+      return valor;
+    }
+
+    function classeJejum(jejum) {
+      const valor = textoJejum(jejum).toLowerCase();
+      return valor.includes("sem jejum") ? "jejum-sem" : "jejum-badge";
+    }
+
+    function botaoTermo(link) {
+      const valor = (link || "").trim();
+      if (!valor) return `<span class="badge termos-vazio">Sem PDF</span>`;
+      return `<a href="${valor}" target="_blank" rel="noopener"><button class="btn btn-termo">Baixar</button></a>`;
+    }
+
     function textoTipo(tipo) {
       return tipo === "Particular" ? "Particular" : "Normal";
     }
@@ -656,6 +1173,8 @@
           (exame.sigla || "").toLowerCase().includes(termo) ||
           (exame.nome || "").toLowerCase().includes(termo) ||
           (exame.codigo || "").toLowerCase().includes(termo) ||
+          (exame.tempo_jejum || "").toLowerCase().includes(termo) ||
+          (exame.link_termo || "").toLowerCase().includes(termo) ||
           (exame.observacao || "").toLowerCase().includes(termo);
 
         const bateTipo = !filtroTipo || (exame.tipo || "Normal") === filtroTipo;
@@ -677,6 +1196,9 @@
       tabelaExames.innerHTML = "";
       totalExames.textContent = exames.length;
       totalEncontrados.textContent = lista.length;
+      totalAutorizar.textContent = exames.filter(exame => exame.autorizacao === "Precisa autorizar" || exame.autorizacao === "Precisa autorizar com anexo").length;
+      totalAnexo.textContent = exames.filter(exame => exame.anexo === "Sim").length;
+      totalParticular.textContent = exames.filter(exame => (exame.tipo || "Normal") === "Particular").length;
 
       if (lista.length === 0) {
         semResultado.style.display = "block";
@@ -694,7 +1216,9 @@
           item.anexo === exame.anexo &&
           item.observacao === exame.observacao &&
           (item.tipo || "Normal") === (exame.tipo || "Normal") &&
-          (item.termos || "") === (exame.termos || "")
+          (item.termos || "") === (exame.termos || "") &&
+          (item.tempo_jejum || "") === (exame.tempo_jejum || "") &&
+          (item.link_termo || "") === (exame.link_termo || "")
         );
 
         const tr = document.createElement("tr");
@@ -711,14 +1235,16 @@
           <td><span class="badge ${classeAutorizacao(exame.autorizacao)}">${exame.autorizacao}</span></td>
           <td><span class="badge ${classeAnexo(exame.anexo)}">${exame.anexo}</span></td>
           <td><span class="badge ${classeTermos(exame.termos || "")}">${textoTermos(exame.termos || "")}</span></td>
+          <td><span class="badge ${classeJejum(exame.tempo_jejum || "")}">${textoJejum(exame.tempo_jejum || "")}</span></td>
+          <td>${botaoTermo(exame.link_termo || "")}</td>
           <td>${exame.observacao || ""}</td>
           <td>
             <div class="acoes">
               <button class="btn btn-verde" onclick="copiarCodigo('${String(exame.codigo).replace(/'/g, "\\'")}')">
-                ${(exame.tipo || "Normal") === "Particular" ? "Copiar preço" : "Copiar código"}
+                ${(exame.tipo || "Normal") === "Particular" ? "Preço" : "Código"}
               </button>
+              <button class="btn btn-laranja" onclick="copiarLinha(${indexOriginal})">Linha</button>
               <button class="btn btn-roxo" onclick="editarExame(${indexOriginal})">Editar</button>
-              <button class="btn btn-laranja" onclick="copiarLinha(${indexOriginal})">Copiar linha</button>
               <button class="btn btn-vermelho" onclick="excluirExame(${indexOriginal})">Excluir</button>
             </div>
           </td>
@@ -751,7 +1277,7 @@
       if (!exame) return;
 
       const campo = (exame.tipo || "Normal") === "Particular" ? "PREÇO" : "CÓDIGO";
-      const texto = `TIPO: ${textoTipo(exame.tipo || "Normal")} | SIGLA: ${exame.sigla} | NOME: ${exame.nome} | ${campo}: ${exame.codigo} | AUTORIZAÇÃO: ${exame.autorizacao} | ANEXO: ${exame.anexo} | TERMOS: ${textoTermos(exame.termos || "")} | OBS: ${exame.observacao || ""}`;
+      const texto = `TIPO: ${textoTipo(exame.tipo || "Normal")} | SIGLA: ${exame.sigla} | NOME: ${exame.nome} | ${campo}: ${exame.codigo} | AUTORIZAÇÃO: ${exame.autorizacao} | ANEXO: ${exame.anexo} | TERMOS: ${textoTermos(exame.termos || "")} | JEJUM: ${textoJejum(exame.tempo_jejum || "")} | TERMO PDF: ${exame.link_termo || ""} | OBS: ${exame.observacao || ""}`;
       copiarTexto(texto, "Linha copiada");
     }
 
@@ -765,10 +1291,77 @@
 
       const texto = filtrados.map(exame => {
         const campo = (exame.tipo || "Normal") === "Particular" ? "PREÇO" : "CÓDIGO";
-        return `${textoTipo(exame.tipo || "Normal")} | ${exame.sigla} | ${exame.nome} | ${campo}: ${exame.codigo} | ${exame.autorizacao} | Anexo: ${exame.anexo} | Termos: ${textoTermos(exame.termos || "")} | Obs: ${exame.observacao || ""}`;
+        return `${textoTipo(exame.tipo || "Normal")} | ${exame.sigla} | ${exame.nome} | ${campo}: ${exame.codigo} | ${exame.autorizacao} | Anexo: ${exame.anexo} | Termos: ${textoTermos(exame.termos || "")} | Jejum: ${textoJejum(exame.tempo_jejum || "")} | Termo PDF: ${exame.link_termo || ""} | Obs: ${exame.observacao || ""}`;
       }).join("\n");
 
       copiarTexto(texto, "Resultados visíveis copiados");
+    }
+
+
+    function mostrarFormularioNovo() {
+      limparFormulario();
+      painelFormulario.style.display = "block";
+      document.getElementById("novoSigla").focus();
+      painelFormulario.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function exportarBackup() {
+      const dataAtual = new Date().toISOString().slice(0, 10);
+      const conteudo = JSON.stringify(exames, null, 2);
+      const arquivo = new Blob([conteudo], { type: "application/json" });
+      const link = document.createElement("a");
+
+      link.href = URL.createObjectURL(arquivo);
+      link.download = `backup-exames-${dataAtual}.json`;
+      link.click();
+
+      URL.revokeObjectURL(link.href);
+      mostrarToast("Backup exportado");
+    }
+
+    function importarBackup(event) {
+      const arquivo = event.target.files[0];
+      if (!arquivo) return;
+
+      const leitor = new FileReader();
+
+      leitor.onload = function(e) {
+        try {
+          const dados = JSON.parse(e.target.result);
+
+          if (!Array.isArray(dados)) {
+            mostrarToast("Arquivo inválido");
+            return;
+          }
+
+          const confirmar = confirm("Importar este backup vai substituir a base atual deste navegador. Deseja continuar?");
+          if (!confirmar) return;
+
+          exames = dados.map(item => ({
+            tipo: item.tipo || "Normal",
+            sigla: item.sigla || "",
+            nome: item.nome || "",
+            codigo: item.codigo || "",
+            autorizacao: item.autorizacao || "Não precisa",
+            anexo: item.anexo || "Não",
+            termos: item.termos || "",
+            tempo_jejum: item.tempo_jejum || "",
+            link_termo: item.link_termo || "",
+            observacao: item.observacao || ""
+          }));
+
+          salvarExames();
+          limparFormulario();
+          aplicarFiltros();
+          mostrarToast("Backup importado");
+        } catch (erro) {
+          mostrarToast("Não foi possível importar");
+        } finally {
+          event.target.value = "";
+        }
+      };
+
+      leitor.readAsText(arquivo);
     }
 
     function alternarPlaceholderValor() {
@@ -789,14 +1382,14 @@
       document.getElementById("novoAutorizacao").value = "Não precisa";
       document.getElementById("novoAnexo").value = "Não";
       document.getElementById("novoTermos").value = "";
+      document.getElementById("novoJejum").value = "";
+      document.getElementById("novoLinkTermo").value = "";
       document.getElementById("novaObservacao").value = "";
 
       alternarPlaceholderValor();
     }
 
-    function salvarExame() {
-      const scrollAtual = window.scrollY;
-
+    async function salvarExame() {
       const tipo = document.getElementById("novoTipo").value;
       const sigla = document.getElementById("novoSigla").value.trim().toUpperCase();
       const nome = document.getElementById("novoNome").value.trim();
@@ -804,61 +1397,53 @@
       const autorizacao = document.getElementById("novoAutorizacao").value;
       const anexo = document.getElementById("novoAnexo").value;
       const termos = document.getElementById("novoTermos").value;
+      const tempo_jejum = document.getElementById("novoJejum").value.trim();
+      const link_termo = document.getElementById("novoLinkTermo").value.trim();
       const observacao = document.getElementById("novaObservacao").value.trim();
 
       if (!sigla || !nome || !codigo) {
-        mostrarToast("Preencha sigla, nome e código ou preço");
+        alert("Preencha os campos obrigatórios");
         return;
       }
 
-      if (indiceEdicao === null) {
-        const existente = exames.find(e => e.sigla === sigla);
-        if (existente) {
-          mostrarToast("Essa sigla já existe");
+      const dados = { tipo, sigla, nome, codigo, autorizacao, anexo, termos, tempo_jejum, link_termo, observacao };
+
+      if (indiceEdicao !== null) {
+        const exame = exames[indiceEdicao];
+        if (!exame || !exame.id) {
+          alert("Não encontrei o ID desse exame para editar.");
           return;
         }
 
-        exames.push({
-          tipo,
-          sigla,
-          nome,
-          codigo,
-          autorizacao,
-          anexo,
-          termos,
-          observacao
-        });
+        const { error } = await supabaseClient
+          .from("exames")
+          .update(dados)
+          .eq("id", exame.id);
 
-        mostrarToast("Exame adicionado");
-      } else {
-        const siglaDuplicada = exames.some((e, i) => e.sigla === sigla && i !== indiceEdicao);
-        if (siglaDuplicada) {
-          mostrarToast("Essa sigla já existe em outro exame");
+        if (error) {
+          console.error("Erro ao atualizar:", error);
+          alert("Erro ao atualizar: " + error.message);
           return;
         }
-
-        exames[indiceEdicao] = {
-          tipo,
-          sigla,
-          nome,
-          codigo,
-          autorizacao,
-          anexo,
-          termos,
-          observacao
-        };
 
         mostrarToast("Exame atualizado");
+      } else {
+        const { error } = await supabaseClient
+          .from("exames")
+          .insert([dados]);
+
+        if (error) {
+          console.error("Erro ao salvar:", error);
+          alert("Erro ao salvar: " + error.message);
+          return;
+        }
+
+        mostrarToast("Exame adicionado");
       }
 
-      salvarExames();
       limparFormulario();
-      aplicarFiltros();
-
-      window.scrollTo({
-        top: scrollAtual,
-        behavior: "instant"
-      });
+      painelFormulario.style.display = "none";
+      await carregarExamesBanco();
     }
 
     function editarExame(index) {
@@ -866,6 +1451,7 @@
       if (!exame) return;
 
       indiceEdicao = index;
+      painelFormulario.style.display = "block";
       document.getElementById("formularioExame").classList.add("campo-edicao");
       tituloFormulario.textContent = "Editar exame";
       btnSalvar.textContent = "Salvar alteração";
@@ -878,54 +1464,170 @@
       document.getElementById("novoAutorizacao").value = exame.autorizacao || "Não precisa";
       document.getElementById("novoAnexo").value = exame.anexo || "Não";
       document.getElementById("novoTermos").value = exame.termos || "";
+      document.getElementById("novoJejum").value = exame.tempo_jejum || "";
+      document.getElementById("novoLinkTermo").value = exame.link_termo || "";
       document.getElementById("novaObservacao").value = exame.observacao || "";
 
       alternarPlaceholderValor();
       document.getElementById("novoSigla").focus();
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     }
 
     function cancelarEdicao() {
       limparFormulario();
+      painelFormulario.style.display = "none";
       mostrarToast("Edição cancelada");
     }
 
-    function excluirExame(index) {
+    async function excluirExame(index) {
       if (index < 0 || index >= exames.length) return;
+      const exame = exames[index];
+      const confirmar = confirm(`Tem certeza que deseja excluir ${exame.sigla} - ${exame.nome}?`);
+      if (!confirmar) return;
+      const { error } = await supabaseClient
+        .from("exames")
+        .delete()
+        .eq("id", exame.id);
+      if (error) {
+        console.error("Erro ao excluir:", error);
+        mostrarToast("Exclusão bloqueada. Falta liberar o painel admin no Supabase.");
+        return;
+      }
+      limparFormulario();
+      await carregarExamesBanco();
+      mostrarToast("Exame excluído do banco");
+    }
 
-      exames.splice(index, 1);
-      salvarExames();
 
-      if (indiceEdicao === index) {
-        limparFormulario();
-      } else if (indiceEdicao !== null && index < indiceEdicao) {
-        indiceEdicao--;
+    async function importarExamesDasFotos() {
+      const adicionais = [
+        { tipo: "Normal", sigla: "URI OU EAS OU EQU", nome: "URINA TIPO I", codigo: "11141000", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "PCRQ", nome: "PROTEINA C REATIVA QUANTITATIVA", codigo: "11062398", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CA199", nome: "CA19-9", codigo: "11065192", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "PANCA", nome: "P-ANCA ANTI MIELOPEROXIDASE", codigo: "11066021", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ANTI HBC - IGM", nome: "ANTICORPOS IGM CONTRA ANTIGENO C DA HEPATITE B", codigo: "11063041", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HCV", nome: "HEPATITE C - ANTI HCV", codigo: "11063084", autorizacao: "Precisa autorizar", anexo: "Não", termos: "Sim", observacao: "" },
+        { tipo: "Normal", sigla: "CANCA", nome: "C-ANCA", codigo: "11066010", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "4H JEJUM" },
+        { tipo: "Normal", sigla: "ASPER", nome: "ASPERGILLUS FUMIGATUS", codigo: "11065656", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ALUMI", nome: "ALUMINIO SERICO", codigo: "11174013", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "DIMER", nome: "D-DIMERO", codigo: "11048000", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "FVPCR", nome: "PESQUISA DE FATOR V DE LEIDEN", codigo: "11047186", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CARTL", nome: "CARNITINA TOTAL E LIVRE", codigo: "11013192", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "D1", nome: "IGE ESPECIFICO (D1) - ACAROS - D. PTERONYSSINUS", codigo: "11062312", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "COVAG", nome: "TESTE DE ANTIGENO DE COVID 19", codigo: "11073723", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "MATERIAL NASAL" },
+        { tipo: "Normal", sigla: "TROPT", nome: "TROPONINA T QUANTITATIVA", codigo: "11013184", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "TEM 4 TIPOS DE TROPONINA" },
+        { tipo: "Normal", sigla: "KAPPA", nome: "CADEIA KAPPA/LAMBDA LEVE LIVRE", codigo: "11142057", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CALPR", nome: "CALPROTECTINA", codigo: "11032971", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "Sim", observacao: "" },
+        { tipo: "Normal", sigla: "NCOV", nome: "CORONA VIRUS - COVID-19 PCR PARA COVID-19", codigo: "11073645", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "Sim", observacao: "" },
+        { tipo: "Normal", sigla: "METF", nome: "METANEFRINAS FRACIONADAS, PLASMA", codigo: "11054301", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "LAMO", nome: "DOSAGEM DE LAMOTRIGINA", codigo: "11016272", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "TRAB", nome: "TRAB - ANTICORPO ANTI RECEPTOR DE TSH", codigo: "11073055", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ACMAS", nome: "ACIDO METILMALONICO", codigo: "11015136", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Particular", sigla: "COPRO", nome: "PROVA COPROLOGICA FUNCIONAL", codigo: "29,00", autorizacao: "Não precisa", anexo: "Não", termos: "Não", observacao: "SEM CARTAO BIOFAST" },
+        { tipo: "Normal", sigla: "HBQUA", nome: "HEPATITE B PCR QUANTITATIVO", codigo: "11065419", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HBQLA", nome: "HEPATITE B PCR QUALITATIVO", codigo: "11065400", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "SHBG", nome: "GLOBULINA LIGADORA DE HORMONIOS SEXUAIS", codigo: "11056126", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CROMO", nome: "CROMO", codigo: "11015217", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HLB51", nome: "DETECCAO DE HLA-B51", codigo: "11151064", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HTLV1", nome: "HTLV I/II", codigo: "11065516", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ANTI HBC - IGG", nome: "ANTICORPOS IGG CONTRA ANTIGENO C DA HEPATITE B", codigo: "11063033", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HBEAG", nome: "ANTIGENO E DA HEPATITE B", codigo: "11063262", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HBSAG", nome: "ANTIGENO S (SUPERFICIE) DA HEPATITE B", codigo: "11063270", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "SOMA", nome: "SOMATOMEDINA", codigo: "11055065", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "MACRO", nome: "MACROPROLACTINA", codigo: "11053100", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CORTU", nome: "CORTISOL URINARIO - 24 HORAS", codigo: "11142251", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ABORH", nome: "GRUPO SANGUINEO ABO/RH", codigo: "11041030", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "VITA6", nome: "VITAMINA B6", codigo: "11015268", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "VB1", nome: "VITAMINA B1", codigo: "11015152", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "TAXA", nome: "TAXA DE FILTRACAO GLOMERULAR", codigo: "00000000", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HGH", nome: "HORMONIO DO CRESCIMENTO HUMANO", codigo: "11053070", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "SEROT", nome: "SEROTONINA", codigo: "11052074", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ALFA", nome: "ALFA FETOPROTEINA", codigo: "11065010", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "DHT", nome: "DIHIDROTESTOSTERONA", codigo: "11054042", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "PROGE", nome: "PROGESTERONA", codigo: "11054085", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ESTRO", nome: "ESTRONA-E1", codigo: "11053054", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "PROLA", nome: "PROLACTINA", codigo: "11991194", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "FIBRI", nome: "FIBRINOGENIO", codigo: "11042052", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HPV", nome: "PAPILOMAVIRUS HUMANO", codigo: "11073403", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HCCQ", nome: "BHCG QUANTITATIVO", codigo: "11052031", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "BETA HCG" },
+        { tipo: "Normal", sigla: "GLICG", nome: "ANTI BETA 2 GLICOPROTEINAS IGG/IGM", codigo: "11073462", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CLEAR", nome: "CLEARANCE DE CREATININA", codigo: "11012072", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "TOXKM/TOXOK", nome: "TOXOCARA CANIS IGM/IGG", codigo: "11062525", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "NO MEDLINK, COLOCAR SOMENTE 1 QTD" },
+        { tipo: "Normal", sigla: "GAD", nome: "ANTICORPOS ANTI GAD", codigo: "11992166", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "TRANS", nome: "ANTI TRANSGLUTAMINASE IGA", codigo: "11014296", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ENDOA/ENDOG/ENDOM", nome: "ANTI ENDOMISIO IGA/IGG/IGM", codigo: "11062517", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CHAGI/CHAGN", nome: "CHAGAS IGG / IGM", codigo: "11061090", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "NO MEDLINK, COLOCAR SOMENTE 1 QTD" },
+        { tipo: "Normal", sigla: "ENDOA", nome: "ANTI ENDOMISIO ANTICORPOS IGA", codigo: "11062517", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "B2GLI", nome: "ANTICORPOS IGA ANTI BETA2 GLICOPROTEINA 1", codigo: "11073462", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ELEL", nome: "ELETROFORESE DE LIPOPROTEINAS", codigo: "11014091", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "IGD", nome: "IMUNOGLOBULINA D - IGD", codigo: "11062428", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "FOSFL", nome: "FOSFOLIPIDIOS", codigo: "11011165", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "ECA", nome: "ENZIMA CONVERSORA ANGIOTENSIVA I/D - ECA", codigo: "11015179", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CARIG", nome: "CARIOTIPO BANDA G - CONSTITUCIONAL", codigo: "11151013", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "Sim", observacao: "COLETA NO SANGUE TEM QUESTIONARIO" },
+        { tipo: "Normal", sigla: "DELY", nome: "ESTUDO DE MICRODELECAO NO CROMOSSOMO Y", codigo: "11047046", autorizacao: "Precisa autorizar com anexo", anexo: "Sim", termos: "Sim", observacao: "COLETA NO SANGUE TEM QUESTIONARIO" },
+        { tipo: "Normal", sigla: "HAVG", nome: "HEPATITE A ANTI HVA - IGG", codigo: "00000000", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "HAVM", nome: "HEPATITE A ANTI HVA - IGM", codigo: "11111111", autorizacao: "Precisa autorizar", anexo: "Não", termos: "", observacao: "" },
+        { tipo: "Normal", sigla: "CTFF OU TIBC", nome: "CAPACIDADE TOTAL DE FIXACAO DO FERRO", codigo: "33333333", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "NAO SEI SE PRECISA AUTORIZAR" },
+        { tipo: "Normal", sigla: "ALFA1", nome: "ALFA1 GLICOPROTEINA ACIDA", codigo: "11014024", autorizacao: "Não precisa", anexo: "Não", termos: "", observacao: "" }
+      ];
+
+      const base = [...examesPadrao, ...adicionais];
+      const normalizados = base.map(item => ({
+        tipo: item.tipo || "Normal",
+        sigla: item.sigla || "",
+        nome: item.nome || "",
+        codigo: item.codigo || "",
+        autorizacao: item.autorizacao || "Não precisa",
+        anexo: item.anexo || "Não",
+        termos: item.termos || "",
+        tempo_jejum: item.tempo_jejum || "",
+        link_termo: item.link_termo || "",
+        observacao: item.observacao || ""
+      })).filter(item => item.sigla && item.nome && item.codigo);
+
+      const { data: existentes, error: erroConsulta } = await supabaseClient
+        .from("exames")
+        .select("sigla,codigo");
+
+      if (erroConsulta) {
+        console.error("Erro ao consultar existentes:", erroConsulta);
+        alert("Erro ao consultar existentes: " + erroConsulta.message);
+        return;
       }
 
-      aplicarFiltros();
-      mostrarToast("Exame excluído");
+      const chavesExistentes = new Set((existentes || []).map(item => `${String(item.sigla).toUpperCase()}|${String(item.codigo)}`));
+      const novos = normalizados.filter(item => !chavesExistentes.has(`${String(item.sigla).toUpperCase()}|${String(item.codigo)}`));
+
+      if (novos.length === 0) {
+        mostrarToast("Nenhum exame novo para importar");
+        return;
+      }
+
+      const confirmar = confirm(`Importar ${novos.length} exames novos para o Supabase?`);
+      if (!confirmar) return;
+
+      for (let i = 0; i < novos.length; i += 100) {
+        const lote = novos.slice(i, i + 100);
+        const { error } = await supabaseClient
+          .from("exames")
+          .insert(lote);
+
+        if (error) {
+          console.error("Erro ao importar lote:", error);
+          alert("Erro ao importar: " + error.message);
+          return;
+        }
+      }
+
+      await carregarExamesBanco();
+      mostrarToast(`${novos.length} exames importados`);
     }
 
     busca.addEventListener("input", aplicarFiltros);
     novoTipo.addEventListener("change", alternarPlaceholderValor);
 
-
-    window.addEventListener("scroll", () => {
-      if (window.scrollY > 300) {
-        btnTopo.classList.add("show");
-      } else {
-        btnTopo.classList.remove("show");
-      }
-    });
-
-    btnTopo.addEventListener("click", () => {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    });
-
     alternarPlaceholderValor();
-    renderizarTabela(exames);
+    carregarExamesBanco();
   </script>
 </body>
 </html>
