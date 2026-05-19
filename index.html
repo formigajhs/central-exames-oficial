@@ -812,6 +812,36 @@
       .container { margin-top: -32px; }
     }
 
+
+    .btn-topo {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      width: 52px;
+      height: 52px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: white;
+      font-size: 22px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.25s ease;
+    }
+
+    .btn-topo.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .btn-topo:hover {
+      transform: translateY(-2px);
+    }
+
   </style>
 </head>
 <body>
@@ -973,6 +1003,8 @@
     </div>
   </div>
 
+  <button id="btnTopo" class="btn-topo" title="Voltar ao topo">↑</button>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1049,6 +1081,7 @@
 
     let exames = [];
     let indiceEdicao = null;
+    let posicaoAntesDaEdicao = 0;
 
     const tabelaExames = document.getElementById("tabelaExames");
     const busca = document.getElementById("busca");
@@ -1407,6 +1440,8 @@
       }
 
       const dados = { tipo, sigla, nome, codigo, autorizacao, anexo, termos, tempo_jejum, link_termo, observacao };
+      const estavaEditando = indiceEdicao !== null;
+      const posicaoParaRetornar = posicaoAntesDaEdicao || window.scrollY;
 
       if (indiceEdicao !== null) {
         const exame = exames[indiceEdicao];
@@ -1444,12 +1479,22 @@
       limparFormulario();
       painelFormulario.style.display = "none";
       await carregarExamesBanco();
+
+      if (estavaEditando) {
+        requestAnimationFrame(() => {
+          window.scrollTo({
+            top: posicaoParaRetornar,
+            behavior: "auto"
+          });
+        });
+      }
     }
 
     function editarExame(index) {
       const exame = exames[index];
       if (!exame) return;
 
+      posicaoAntesDaEdicao = window.scrollY;
       indiceEdicao = index;
       painelFormulario.style.display = "block";
       document.getElementById("formularioExame").classList.add("campo-edicao");
@@ -1470,7 +1515,10 @@
 
       alternarPlaceholderValor();
       document.getElementById("novoSigla").focus();
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      painelFormulario.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
     }
 
     function cancelarEdicao() {
@@ -1625,6 +1673,24 @@
 
     busca.addEventListener("input", aplicarFiltros);
     novoTipo.addEventListener("change", alternarPlaceholderValor);
+
+
+    const btnTopo = document.getElementById("btnTopo");
+
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 300) {
+        btnTopo.classList.add("show");
+      } else {
+        btnTopo.classList.remove("show");
+      }
+    });
+
+    btnTopo.addEventListener("click", () => {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    });
 
     alternarPlaceholderValor();
     carregarExamesBanco();
