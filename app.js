@@ -10,6 +10,8 @@ let exames = [];
 let convenios = [];
 let convenioSelecionado = null;
 let itensOrcamento = [];
+let favoritosIds = new Set();
+let somenteFavoritos = false;
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -19,6 +21,13 @@ async function buscarTabela(tabela, select = "*") {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}?select=${encodeURIComponent(select)}`, { headers: apiHeaders() });
   if (!response.ok) throw new Error(await response.text());
   return response.json();
+}
+
+async function carregarFavoritos() {
+  if (!sessao?.user?.id) return;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/favoritos_exames?select=exame_id&usuario_id=eq.${encodeURIComponent(sessao.user.id)}`, {headers:apiHeaders()});
+  if (!response.ok) return;
+  favoritosIds = new Set((await response.json()).map(item => String(item.exame_id)));
 }
 
 async function carregarExames() {
@@ -54,7 +63,7 @@ function renderExames() {
   const tipo = $("filtroTipo").value;
   const filtrados = exames.filter(e => {
     const texto = normalizar(`${e.sigla} ${e.nome} ${e.codigo}`);
-    return texto.includes(termo) && (!autorizacao || e.autorizacao === autorizacao) && (!tipo || (e.tipo || "Normal") === tipo);
+    return texto.includes(termo) && (!autorizacao || e.autorizacao === autorizacao) && (!tipo || (e.tipo || "Normal") === tipo) && (!somenteFavoritos || favoritosIds.has(String(e.id)));
   });
   $("statTotal").textContent = exames.length;
   $("statResultados").textContent = filtrados.length;
@@ -66,7 +75,7 @@ function renderExames() {
     const statusAutorizacao = normalizar(e.autorizacao);
     const classeAlerta = statusAutorizacao.includes("com anexo") ? "needs-attachment" : statusAutorizacao.startsWith("precisa autorizar") ? "needs-auth" : "";
     return `<article class="exam-row ${particular ? "particular" : ""} ${classeAlerta}" data-id="${escapeHtml(e.id)}">
-      <div><span class="cell-label">SIGLA</span><span class="sigla ${String(e.sigla || "").length > 12 ? "longa" : ""}" title="${escapeHtml(e.sigla)}">${escapeHtml(e.sigla)}</span></div>
+      <div><span class="cell-label">SIGLA</span><button class="favorite-btn ${favoritosIds.has(String(e.id)) ? "active" : ""}" data-favorite="${escapeHtml(e.id)}" title="Favoritar">${favoritosIds.has(String(e.id)) ? "★" : "☆"}</button><span class="sigla ${String(e.sigla || "").length > 12 ? "longa" : ""}" title="${escapeHtml(e.sigla)}">${escapeHtml(e.sigla)}</span></div>
       <div class="exam-name"><strong>${escapeHtml(e.nome)}</strong><small>Código ${escapeHtml(e.codigo || "—")}</small>${particular ? '<span class="particular-label">PARTICULAR</span>' : ""}</div>
       <div><span class="cell-label">◷ JEJUM</span><strong>${escapeHtml(e.tempo_jejum || "Sem informação")}</strong></div>
       <div><span class="cell-label">◆ AUTORIZAÇÃO</span><span class="badge ${statusClass(e.autorizacao)}">${escapeHtml(e.autorizacao || "—")}</span></div>
@@ -79,6 +88,16 @@ function renderExames() {
   }));
   document.querySelectorAll("[data-copy-code]").forEach(button => button.addEventListener("click", async () => { await navigator.clipboard.writeText(button.dataset.copyCode); mostrarToast("Código copiado"); }));
   document.querySelectorAll("[data-copy-all]").forEach(button => button.addEventListener("click", () => window.copiarResumo(button.dataset.copyAll)));
+  document.querySelectorAll("[data-favorite]").forEach(button => button.addEventListener("click", () => alternarFavorito(button.dataset.favorite)));
+}
+
+async function alternarFavorito(exameId) {
+  const ativo = favoritosIds.has(String(exameId));
+  const url = `${SUPABASE_URL}/rest/v1/favoritos_exames?usuario_id=eq.${encodeURIComponent(sessao.user.id)}&exame_id=eq.${encodeURIComponent(exameId)}`;
+  const response = await fetch(ativo ? url : `${SUPABASE_URL}/rest/v1/favoritos_exames`, ativo ? {method:"DELETE",headers:apiHeaders()} : {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json"},body:JSON.stringify({usuario_id:sessao.user.id,exame_id:exameId})});
+  if (!response.ok) { mostrarToast("Não foi possível alterar o favorito"); return; }
+  ativo ? favoritosIds.delete(String(exameId)) : favoritosIds.add(String(exameId));
+  renderExames(); mostrarToast(ativo ? "Removido dos favoritos" : "Adicionado aos favoritos");
 }
 
 function abrirExame(id) {
@@ -95,7 +114,8 @@ function abrirExame(id) {
       <div class="detail-card"><small>TERMOS</small><strong>${escapeHtml(e.termos || "Não definido")}</strong></div>
       <div class="detail-card wide"><small>OBSERVAÇÕES</small><strong>${escapeHtml(e.observacao || "Sem observações")}</strong></div>
     </div>
-    <div class="action-row">${e.link_termo ? `<a class="action" href="${escapeHtml(e.link_termo)}" target="_blank" rel="noopener">▤ Abrir termo PDF</a>` : ""}<button class="action" onclick="copiarResumo('${escapeHtml(e.id)}')">Copiar orientação</button><button class="action admin-action" id="editarExame">✎ Editar exame</button></div>
+    <div class="action-row">${e.link_termo ? `<a class="action" href="${escapeHtml(e.link_termo)}" target="_blank" rel="noopener">▤ Abrir termo PDF</a>` : ""}<button class="action" onclick="copiarResumo('${escapeHtml(e.id)}')">Copiar orientação</button><button class="action" id="verHistorico">↺ Histórico</button><button class="action admin-action" id="editarExame">✎ Editar exame</button></div>
+    <section class="history-panel" id="historicoExame" hidden><h3>Histórico de alterações</h3><div id="listaHistorico">Carregando...</div></section>
     <form class="edit-form exam-edit-form" id="formExame" hidden>
       <h3>Editar exame</h3><div class="form-grid">
         <label class="field"><span>TIPO</span><select name="tipo"><option ${e.tipo !== "Particular" ? "selected" : ""}>Normal</option><option ${e.tipo === "Particular" ? "selected" : ""}>Particular</option></select></label>
@@ -116,6 +136,7 @@ function abrirExame(id) {
   $("drawer").classList.add("open");
   $("drawer").setAttribute("aria-hidden", "false");
   $("editarExame").addEventListener("click", () => { $("formExame").hidden = false; $("formExame").scrollIntoView({behavior:"smooth",block:"start"}); });
+  $("verHistorico").addEventListener("click", () => carregarHistorico(e.id));
   $("cancelarEdicaoExame").addEventListener("click", () => { $("formExame").hidden = true; });
   $("formExame").addEventListener("submit", async event => {
     event.preventDefault();
@@ -133,6 +154,19 @@ function abrirExame(id) {
     exames[index] = atualizados[0] || {...e,...dados};
     renderExames(); abrirExame(e.id); mostrarToast("Exame atualizado");
   });
+}
+
+async function carregarHistorico(exameId) {
+  $("historicoExame").hidden = false;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/exame_alteracoes?select=usuario_email,dados_anteriores,dados_novos,alterado_em&exame_id=eq.${encodeURIComponent(exameId)}&order=alterado_em.desc&limit=20`, {headers:apiHeaders()});
+  if (!response.ok) { $("listaHistorico").innerHTML = '<div class="history-empty">Não foi possível carregar o histórico.</div>'; return; }
+  const itens = await response.json();
+  const labels = {nome:"Nome",sigla:"Sigla",codigo:"Código",tempo_jejum:"Jejum",autorizacao:"Autorização",anexo:"Anexo",termos:"Termos",link_termo:"PDF",observacao:"Observação",valor_cartao_biofast:"Valor Biofast",valor_sem_cartao:"Valor sem cartão",tipo:"Tipo"};
+  $("listaHistorico").innerHTML = itens.length ? itens.map(item => {
+    const mudancas = Object.keys(labels).filter(campo => JSON.stringify(item.dados_anteriores?.[campo]) !== JSON.stringify(item.dados_novos?.[campo])).map(campo => `<div class="history-change"><b>${labels[campo]}:</b> ${escapeHtml(item.dados_anteriores?.[campo] ?? "vazio")} → ${escapeHtml(item.dados_novos?.[campo] ?? "vazio")}</div>`).join("");
+    return `<article class="history-item"><header><strong>${escapeHtml(item.usuario_email || "Sistema")}</strong><time>${new Date(item.alterado_em).toLocaleString("pt-BR")}</time></header>${mudancas || '<div class="history-change">Registro atualizado.</div>'}</article>`;
+  }).join("") : '<div class="history-empty">Nenhuma alteração registrada ainda.</div>';
+  $("historicoExame").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 
 function fecharDrawer() {
@@ -217,6 +251,7 @@ document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", (
 $("buscaExame").addEventListener("input", renderExames);
 $("filtroAutorizacao").addEventListener("change", renderExames);
 $("filtroTipo").addEventListener("change", renderExames);
+$("filtroFavoritos").addEventListener("click", () => { somenteFavoritos = !somenteFavoritos; $("filtroFavoritos").classList.toggle("active", somenteFavoritos); $("filtroFavoritos").textContent = somenteFavoritos ? "★ Meus favoritos" : "☆ Meus favoritos"; renderExames(); });
 $("buscaConvenio").addEventListener("input", renderConvenios);
 $("fecharDrawer").addEventListener("click", fecharDrawer);
 $("drawerBackdrop").addEventListener("click", fecharDrawer);
@@ -333,6 +368,7 @@ async function iniciar() {
       carregarExames(),
       buscarTabela("convenios", "id,nome,categoria,site,usuario,senha,telefone,observacao,ativo,links_extras")
     ]);
+    await carregarFavoritos();
     exames.sort((a,b) => String(a.sigla).localeCompare(String(b.sigla), "pt-BR"));
     convenios.sort((a,b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"));
     $("loadingExames").textContent = `${exames.length} registros`;
