@@ -18,6 +18,16 @@
         <label><span>SENHA</span><input id="loginSenha" type="password" autocomplete="current-password" placeholder="Sua senha" required></label>
         <div class="login-error" id="loginErro" hidden></div>
         <button class="primary" id="btnEntrar" type="submit">Entrar no sistema</button>
+        <button class="login-secondary" id="mostrarCadastro" type="button">Criar meu acesso</button>
+      </form>
+      <form id="formCadastro" class="login-form" hidden>
+        <label><span>NOME</span><input id="cadastroNome" autocomplete="name" placeholder="Seu nome" required></label>
+        <label><span>E-MAIL</span><input id="cadastroEmail" type="email" autocomplete="email" placeholder="seuemail@empresa.com" required></label>
+        <label><span>CRIAR SENHA</span><input id="cadastroSenha" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required></label>
+        <label><span>CÓDIGO INTERNO</span><input id="cadastroCodigo" type="password" autocomplete="off" placeholder="Código fornecido pela empresa" required></label>
+        <div class="login-error" id="cadastroErro" hidden></div>
+        <button class="primary" id="btnCadastrar" type="submit">Criar acesso de consulta</button>
+        <button class="login-secondary" id="voltarLogin" type="button">Voltar para entrar</button>
       </form>
     </div>
   </section>

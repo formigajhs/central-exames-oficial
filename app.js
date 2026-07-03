@@ -388,6 +388,64 @@ function mostrarLogin(mensagem = "") {
   $("loginErro").textContent = mensagem;
 }
 
+function alternarTelaAcesso(cadastro) {
+  $("formLogin").hidden = cadastro;
+  $("formCadastro").hidden = !cadastro;
+  $("loginErro").hidden = true;
+  $("cadastroErro").hidden = true;
+  document.querySelector(".login-card h1").textContent = cadastro ? "Crie seu acesso." : "Entre para continuar.";
+  document.querySelector(".login-card > p").textContent = cadastro ? "O novo acesso começa com o perfil Consulta." : "Use o e-mail e a senha cadastrados no Supabase.";
+}
+
+$("mostrarCadastro").addEventListener("click", () => alternarTelaAcesso(true));
+$("voltarLogin").addEventListener("click", () => alternarTelaAcesso(false));
+
+$("formCadastro").addEventListener("submit", async event => {
+  event.preventDefault();
+  const nome = $("cadastroNome").value.trim();
+  const email = $("cadastroEmail").value.trim();
+  const password = $("cadastroSenha").value;
+  const codigoAcesso = $("cadastroCodigo").value.trim();
+  $("btnCadastrar").disabled = true;
+  $("btnCadastrar").textContent = "Criando acesso...";
+  $("cadastroErro").hidden = true;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method:"POST",
+      headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({email,password,data:{nome,codigo_acesso:codigoAcesso}})
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const detalhe = data.msg || data.error_description || "";
+      const mensagem = /already registered|already been registered|user already exists/i.test(detalhe)
+        ? "Este e-mail já possui cadastro. Volte e faça o login."
+        : /password/i.test(detalhe)
+          ? "A senha precisa ter pelo menos 8 caracteres."
+          : "Código interno inválido ou cadastro não permitido.";
+      throw new Error(mensagem);
+    }
+    if (data.access_token) {
+      sessao = {...data,expires_at:Math.floor(Date.now()/1000)+Number(data.expires_in||3600)};
+      guardarSessao(sessao);
+      await carregarPerfil();
+      mostrarSistema();
+      await iniciar();
+      return;
+    }
+    alternarTelaAcesso(false);
+    $("loginErro").hidden = false;
+    $("loginErro").classList.add("success-message");
+    $("loginErro").textContent = "Cadastro criado. Confirme o e-mail recebido e depois entre no sistema.";
+  } catch (error) {
+    $("cadastroErro").hidden = false;
+    $("cadastroErro").textContent = error.message;
+  } finally {
+    $("btnCadastrar").disabled = false;
+    $("btnCadastrar").textContent = "Criar acesso de consulta";
+  }
+});
+
 $("formLogin").addEventListener("submit", async event => {
   event.preventDefault();
   const email = $("loginEmail").value.trim();
@@ -395,6 +453,7 @@ $("formLogin").addEventListener("submit", async event => {
   $("btnEntrar").disabled = true;
   $("btnEntrar").textContent = "Entrando...";
   $("loginErro").hidden = true;
+  $("loginErro").classList.remove("success-message");
   try {
     const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
       method: "POST",
