@@ -30,6 +30,7 @@
       <button class="tab active" data-view="exames">Exames</button>
       <button class="tab" data-view="convenios" id="tabConvenios">Convênios</button>
       <button class="tab" data-view="orcamento">Orçamento</button>
+      <button class="tab admin-only" data-view="usuarios" id="tabUsuarios">Usuários</button>
     </nav>
     <div class="session-area"><span class="role-badge" id="perfilLogado" hidden></span><span class="online"><i></i> <span id="usuarioLogado">Banco conectado</span></span><button id="btnSair" class="logout">Sair</button></div>
   </header>
@@ -105,6 +106,16 @@
           </div>
           <p class="budget-note" id="avisoOrcamento">Valores sujeitos a atualização. Confirme as informações antes do atendimento.</p>
         </section>
+      </div>
+    </section>
+
+    <section id="view-usuarios" class="view">
+      <div class="hero compact users-hero">
+        <div><span class="eyebrow">ADMINISTRAÇÃO</span><h1>Usuários e acessos</h1><p>Libere funcionários, bloqueie acessos e escolha o que cada pessoa pode fazer.</p></div>
+      </div>
+      <div class="content-card users-card">
+        <div class="section-head"><div><h2>Usuários cadastrados</h2><p>Novos usuários entram bloqueados como Consulta.</p></div><span id="totalUsuarios">Carregando…</span></div>
+        <div class="users-list" id="listaUsuarios"></div>
       </div>
     </section>
   </main>

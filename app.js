@@ -13,9 +13,11 @@ let itensOrcamento = [];
 let favoritosIds = new Set();
 let somenteFavoritos = false;
 let perfilAtual = null;
+let usuarios = [];
 
 const perfilAtivo = () => Boolean(perfilAtual?.ativo);
 const podeOperar = () => perfilAtivo() && ["operador", "administrador"].includes(perfilAtual?.perfil);
+const ehAdministrador = () => perfilAtivo() && perfilAtual?.perfil === "administrador";
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -42,9 +44,51 @@ async function carregarPerfil() {
 function aplicarPerfilNaTela() {
   const operacao = podeOperar();
   document.querySelectorAll(".operation-only").forEach(elemento => { elemento.hidden = !operacao; });
+  document.querySelectorAll(".admin-only").forEach(elemento => { elemento.hidden = !ehAdministrador(); });
   $("tabConvenios").hidden = !operacao;
   $("perfilLogado").hidden = false;
   $("perfilLogado").textContent = perfilAtual.perfil === "administrador" ? "Administrador" : perfilAtual.perfil === "operador" ? "Operador" : "Consulta";
+}
+
+async function carregarUsuarios() {
+  if (!ehAdministrador()) return;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/perfis_usuarios?select=usuario_id,nome,email,perfil,ativo,criado_em&order=criado_em.asc`, { headers: apiHeaders() });
+  if (!response.ok) {
+    $("listaUsuarios").innerHTML = '<div class="empty">Execute a migração do painel de usuários no Supabase.</div>';
+    $("totalUsuarios").textContent = "Configuração pendente";
+    return;
+  }
+  usuarios = await response.json();
+  renderUsuarios();
+}
+
+function renderUsuarios() {
+  $("totalUsuarios").textContent = `${usuarios.length} usuário(s)`;
+  $("listaUsuarios").innerHTML = usuarios.map(usuario => {
+    const proprio = String(usuario.usuario_id) === String(sessao?.user?.id);
+    const status = usuario.ativo ? "Ativo" : "Aguardando liberação";
+    return `<article class="user-row" data-user-row="${escapeHtml(usuario.usuario_id)}">
+      <div class="user-avatar">${escapeHtml((usuario.nome || usuario.email || "U").charAt(0).toUpperCase())}</div>
+      <div class="user-identity"><strong>${escapeHtml(usuario.nome || "Sem nome")}${proprio ? ' <span class="you-label">VOCÊ</span>' : ""}</strong><small>${escapeHtml(usuario.email || "E-mail não informado")}</small></div>
+      <label class="user-field"><span>PERFIL</span><select data-user-role ${proprio ? "disabled" : ""}><option value="consulta" ${usuario.perfil === "consulta" ? "selected" : ""}>Consulta</option><option value="operador" ${usuario.perfil === "operador" ? "selected" : ""}>Operador</option><option value="administrador" ${usuario.perfil === "administrador" ? "selected" : ""}>Administrador</option></select></label>
+      <label class="access-switch"><input type="checkbox" data-user-active ${usuario.ativo ? "checked" : ""} ${proprio ? "disabled" : ""}><span></span><b>${status}</b></label>
+      <button class="primary save-user" data-save-user="${escapeHtml(usuario.usuario_id)}" ${proprio ? "disabled" : ""}>Salvar acesso</button>
+    </article>`;
+  }).join("") || '<div class="empty">Nenhum usuário cadastrado.</div>';
+  document.querySelectorAll("[data-save-user]").forEach(button => button.addEventListener("click", () => salvarUsuario(button.dataset.saveUser)));
+}
+
+async function salvarUsuario(usuarioId) {
+  if (!ehAdministrador() || String(usuarioId) === String(sessao?.user?.id)) return;
+  const linha = document.querySelector(`[data-user-row="${CSS.escape(String(usuarioId))}"]`);
+  const perfil = linha.querySelector("[data-user-role]").value;
+  const ativo = linha.querySelector("[data-user-active]").checked;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/perfis_usuarios?usuario_id=eq.${encodeURIComponent(usuarioId)}`, {method:"PATCH",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({perfil,ativo,atualizado_em:new Date().toISOString()})});
+  if (!response.ok) { mostrarToast("Não foi possível atualizar o usuário"); return; }
+  const atualizado = (await response.json())[0];
+  usuarios = usuarios.map(usuario => String(usuario.usuario_id) === String(usuarioId) ? {...usuario,...atualizado} : usuario);
+  renderUsuarios();
+  mostrarToast(ativo ? "Usuário liberado" : "Usuário bloqueado");
 }
 
 async function carregarFavoritos() {
@@ -405,6 +449,7 @@ async function iniciar() {
     convenios.sort((a,b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"));
     $("loadingExames").textContent = `${exames.length} registros`;
     renderExames(); renderConvenios();
+    await carregarUsuarios();
   } catch (error) {
     console.error(error); $("loadingExames").textContent = "Falha ao conectar"; mostrarToast("Não foi possível carregar o banco");
   }
