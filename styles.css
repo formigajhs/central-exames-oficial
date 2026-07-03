@@ -60,3 +60,6 @@ body{background:radial-gradient(circle at 8% 8%,rgba(74,222,128,.13),transparent
 @media(max-width:1000px){.budget-layout{grid-template-columns:1fr}.budget-picker{position:static}.budget-results{max-height:280px}.budget-sheet-head{display:block}.budget-meta{margin-top:18px}}
 @media(max-width:720px){.budget-meta{grid-template-columns:1fr}.budget-row{grid-template-columns:70px 1fr 32px}.budget-row>:nth-child(3),.budget-row>:nth-child(4){display:none}.budget-totals{grid-template-columns:1fr}.budget-sheet{padding:18px}}
 @media print{body{background:#fff!important}.topbar,.login-gate,.no-print,.back-to-top,.toast,.drawer,.drawer-backdrop{display:none!important}main{width:100%;margin:0}.view{display:none!important}#view-orcamento{display:block!important}.budget-layout{display:block}.budget-sheet{border:0;box-shadow:none;padding:0}.budget-row{grid-template-columns:90px 1fr 145px 145px}.budget-row>:last-child{display:none}.budget-meta input{border:0;padding:0}.budget-totals article{-webkit-print-color-adjust:exact;print-color-adjust:exact}.budget-note{margin-top:26px}}
+
+/* Perfis de acesso */
+.role-badge{border-radius:999px;background:#e9e5ff;color:#5639b8;border:1px solid #d8cffb;padding:7px 10px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.operation-only[hidden],.tab[hidden]{display:none!important}

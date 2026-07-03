@@ -28,10 +28,10 @@
     </div>
     <nav class="tabs" aria-label="Áreas do sistema">
       <button class="tab active" data-view="exames">Exames</button>
-      <button class="tab" data-view="convenios">Convênios</button>
+      <button class="tab" data-view="convenios" id="tabConvenios">Convênios</button>
       <button class="tab" data-view="orcamento">Orçamento</button>
     </nav>
-    <div class="session-area"><span class="online"><i></i> <span id="usuarioLogado">Banco conectado</span></span><button id="btnSair" class="logout">Sair</button></div>
+    <div class="session-area"><span class="role-badge" id="perfilLogado" hidden></span><span class="online"><i></i> <span id="usuarioLogado">Banco conectado</span></span><button id="btnSair" class="logout">Sair</button></div>
   </header>
 
   <main>
@@ -42,7 +42,7 @@
           <h1>Manual de Exames</h1>
           <p>Consulte por nome, sigla ou código e veja preparo, jejum, valores, autorização, termos e documentos.</p>
         </div>
-        <button class="primary" id="novoExame">+ Novo exame</button>
+        <button class="primary operation-only" id="novoExame">+ Novo exame</button>
       </div>
 
       <div class="search-panel">
@@ -69,7 +69,7 @@
     <section id="view-convenios" class="view">
       <div class="hero compact">
         <div><span class="eyebrow blue">ACESSOS E PORTAIS</span><h1>Convênios em um só lugar.</h1><p>Localize o convênio, abra seus portais e copie as informações necessárias.</p></div>
-        <button class="primary blue-btn">+ Novo convênio</button>
+        <button class="primary blue-btn operation-only" id="novoConvenio">+ Novo convênio</button>
       </div>
       <div class="convenio-shell">
         <aside class="convenio-list-panel">

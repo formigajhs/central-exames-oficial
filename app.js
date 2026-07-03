@@ -12,6 +12,10 @@ let convenioSelecionado = null;
 let itensOrcamento = [];
 let favoritosIds = new Set();
 let somenteFavoritos = false;
+let perfilAtual = null;
+
+const perfilAtivo = () => Boolean(perfilAtual?.ativo);
+const podeOperar = () => perfilAtivo() && ["operador", "administrador"].includes(perfilAtual?.perfil);
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -21,6 +25,26 @@ async function buscarTabela(tabela, select = "*") {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}?select=${encodeURIComponent(select)}`, { headers: apiHeaders() });
   if (!response.ok) throw new Error(await response.text());
   return response.json();
+}
+
+async function carregarPerfil() {
+  if (!sessao?.user?.id) throw new Error("Sessão inválida. Entre novamente.");
+  const url = `${SUPABASE_URL}/rest/v1/perfis_usuarios?select=usuario_id,nome,perfil,ativo&usuario_id=eq.${encodeURIComponent(sessao.user.id)}&limit=1`;
+  const response = await fetch(url, { headers: apiHeaders() });
+  if (!response.ok) throw new Error("Não foi possível verificar seu perfil de acesso.");
+  const registros = await response.json();
+  perfilAtual = registros[0] || null;
+  if (!perfilAtual) throw new Error("Seu usuário ainda não possui um perfil de acesso.");
+  if (!perfilAtual.ativo) throw new Error("Seu cadastro aguarda liberação do administrador.");
+  return perfilAtual;
+}
+
+function aplicarPerfilNaTela() {
+  const operacao = podeOperar();
+  document.querySelectorAll(".operation-only").forEach(elemento => { elemento.hidden = !operacao; });
+  $("tabConvenios").hidden = !operacao;
+  $("perfilLogado").hidden = false;
+  $("perfilLogado").textContent = perfilAtual.perfil === "administrador" ? "Administrador" : perfilAtual.perfil === "operador" ? "Operador" : "Consulta";
 }
 
 async function carregarFavoritos() {
@@ -114,7 +138,7 @@ function abrirExame(id) {
       <div class="detail-card"><small>TERMOS</small><strong>${escapeHtml(e.termos || "Não definido")}</strong></div>
       <div class="detail-card wide"><small>OBSERVAÇÕES</small><strong>${escapeHtml(e.observacao || "Sem observações")}</strong></div>
     </div>
-    <div class="action-row">${e.link_termo ? `<a class="action" href="${escapeHtml(e.link_termo)}" target="_blank" rel="noopener">▤ Abrir termo PDF</a>` : ""}<button class="action" onclick="copiarResumo('${escapeHtml(e.id)}')">Copiar orientação</button><button class="action" id="verHistorico">↺ Histórico</button><button class="action admin-action" id="editarExame">✎ Editar exame</button></div>
+    <div class="action-row">${e.link_termo ? `<a class="action" href="${escapeHtml(e.link_termo)}" target="_blank" rel="noopener">▤ Abrir termo PDF</a>` : ""}<button class="action" onclick="copiarResumo('${escapeHtml(e.id)}')">Copiar orientação</button>${podeOperar() ? '<button class="action" id="verHistorico">↺ Histórico</button><button class="action admin-action" id="editarExame">✎ Editar exame</button>' : ""}</div>
     <section class="history-panel" id="historicoExame" hidden><h3>Histórico de alterações</h3><div id="listaHistorico">Carregando...</div></section>
     <form class="edit-form exam-edit-form" id="formExame" hidden>
       <h3>Editar exame</h3><div class="form-grid">
@@ -135,8 +159,10 @@ function abrirExame(id) {
   $("drawerBackdrop").hidden = false;
   $("drawer").classList.add("open");
   $("drawer").setAttribute("aria-hidden", "false");
-  $("editarExame").addEventListener("click", () => { $("formExame").hidden = false; $("formExame").scrollIntoView({behavior:"smooth",block:"start"}); });
-  $("verHistorico").addEventListener("click", () => carregarHistorico(e.id));
+  if (podeOperar()) {
+    $("editarExame").addEventListener("click", () => { $("formExame").hidden = false; $("formExame").scrollIntoView({behavior:"smooth",block:"start"}); });
+    $("verHistorico").addEventListener("click", () => carregarHistorico(e.id));
+  }
   $("cancelarEdicaoExame").addEventListener("click", () => { $("formExame").hidden = true; });
   $("formExame").addEventListener("submit", async event => {
     event.preventDefault();
@@ -309,6 +335,7 @@ function sessaoValida() {
 function mostrarSistema() {
   $("loginGate").classList.add("hidden");
   $("usuarioLogado").textContent = sessao?.user?.email || "Usuário autenticado";
+  aplicarPerfilNaTela();
 }
 
 function mostrarLogin(mensagem = "") {
@@ -342,9 +369,13 @@ $("formLogin").addEventListener("submit", async event => {
     }
     sessao = { ...data, expires_at: Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600) };
     guardarSessao(sessao);
+    await carregarPerfil();
     mostrarSistema();
     await iniciar();
   } catch (error) {
+    sessao = null;
+    perfilAtual = null;
+    apagarSessao();
     mostrarLogin(error.message);
   } finally {
     $("btnEntrar").disabled = false;
@@ -357,6 +388,7 @@ $("btnSair").addEventListener("click", async () => {
     if (sessao?.access_token) await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method:"POST", headers:apiHeaders() });
   } catch (_) {}
   sessao = null;
+  perfilAtual = null;
   apagarSessao();
   exames = []; convenios = [];
   mostrarLogin();
@@ -366,7 +398,7 @@ async function iniciar() {
   try {
     [exames, convenios] = await Promise.all([
       carregarExames(),
-      buscarTabela("convenios", "id,nome,categoria,site,usuario,senha,telefone,observacao,ativo,links_extras")
+      podeOperar() ? buscarTabela("convenios", "id,nome,categoria,site,usuario,senha,telefone,observacao,ativo,links_extras") : Promise.resolve([])
     ]);
     await carregarFavoritos();
     exames.sort((a,b) => String(a.sigla).localeCompare(String(b.sigla), "pt-BR"));
@@ -378,11 +410,21 @@ async function iniciar() {
   }
 }
 
-if (sessaoValida()) {
-  mostrarSistema();
-  iniciar();
-} else {
-  sessao = null;
-  apagarSessao();
-  mostrarLogin();
-}
+(async function iniciarAplicacao() {
+  if (!sessaoValida()) {
+    sessao = null;
+    apagarSessao();
+    mostrarLogin();
+    return;
+  }
+  try {
+    await carregarPerfil();
+    mostrarSistema();
+    await iniciar();
+  } catch (error) {
+    sessao = null;
+    perfilAtual = null;
+    apagarSessao();
+    mostrarLogin(error.message);
+  }
+})();
