@@ -217,6 +217,8 @@ $("filtroTipo").addEventListener("change", renderExames);
 $("buscaConvenio").addEventListener("input", renderConvenios);
 $("fecharDrawer").addEventListener("click", fecharDrawer);
 $("drawerBackdrop").addEventListener("click", fecharDrawer);
+$("voltarTopo").addEventListener("click", () => window.scrollTo({ top:0, behavior:"smooth" }));
+window.addEventListener("scroll", () => $("voltarTopo").classList.toggle("show", window.scrollY > 420), { passive:true });
 
 function sessaoValida() {
   if (!sessao?.access_token) return false;
