@@ -9,6 +9,7 @@ const apiHeaders = () => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${sessa
 let exames = [];
 let convenios = [];
 let convenioSelecionado = null;
+let itensOrcamento = [];
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -219,6 +220,48 @@ $("fecharDrawer").addEventListener("click", fecharDrawer);
 $("drawerBackdrop").addEventListener("click", fecharDrawer);
 $("voltarTopo").addEventListener("click", () => window.scrollTo({ top:0, behavior:"smooth" }));
 window.addEventListener("scroll", () => $("voltarTopo").classList.toggle("show", window.scrollY > 420), { passive:true });
+
+const moedaNumero = valor => Number(String(valor || "0").replace(/\./g, "").replace(",", ".")) || 0;
+const moedaTexto = valor => Number(valor || 0).toLocaleString("pt-BR", {style:"currency",currency:"BRL"});
+
+function renderBuscaOrcamento() {
+  const termo = normalizar($("buscaOrcamento").value);
+  if (!termo) { $("resultadosOrcamento").innerHTML = ""; return; }
+  const resultados = exames.filter(e => normalizar(`${e.sigla} ${e.nome} ${e.codigo}`).includes(termo)).slice(0, 12);
+  $("resultadosOrcamento").innerHTML = resultados.map(e => {
+    const adicionado = itensOrcamento.some(item => String(item.id) === String(e.id));
+    return `<div class="budget-result"><div><strong>${escapeHtml(e.sigla)} — ${escapeHtml(e.nome)}</strong><small>Código ${escapeHtml(e.codigo || "—")}</small></div><button data-add-budget="${escapeHtml(e.id)}" ${adicionado ? "disabled" : ""} title="Adicionar">${adicionado ? "✓" : "+"}</button></div>`;
+  }).join("") || '<p class="subtexto">Nenhum exame encontrado.</p>';
+  document.querySelectorAll("[data-add-budget]").forEach(button => button.addEventListener("click", () => adicionarOrcamento(button.dataset.addBudget)));
+}
+
+function adicionarOrcamento(id) {
+  const exame = exames.find(e => String(e.id) === String(id));
+  if (!exame || itensOrcamento.some(e => String(e.id) === String(id))) return;
+  itensOrcamento.push(exame); renderOrcamento(); renderBuscaOrcamento();
+}
+
+function removerOrcamento(id) {
+  itensOrcamento = itensOrcamento.filter(e => String(e.id) !== String(id)); renderOrcamento(); renderBuscaOrcamento();
+}
+
+function renderOrcamento() {
+  $("orcamentoVazio").hidden = itensOrcamento.length > 0;
+  const semBiofast = itensOrcamento.filter(e => !obterValores(e).biofast).length;
+  const semNormal = itensOrcamento.filter(e => !obterValores(e).semCartao).length;
+  let totalBiofast = 0, totalNormal = 0;
+  $("itensOrcamento").innerHTML = itensOrcamento.length ? `<div class="budget-row header"><span>SIGLA</span><span>EXAME</span><span>CARTÃO BIOFAST</span><span>SEM CARTÃO</span><span></span></div>` + itensOrcamento.map(e => {
+    const valores = obterValores(e); totalBiofast += moedaNumero(valores.biofast); totalNormal += moedaNumero(valores.semCartao);
+    return `<div class="budget-row"><strong class="sigla">${escapeHtml(e.sigla)}</strong><div class="exam-budget-name"><strong>${escapeHtml(e.nome)}</strong><small>Código ${escapeHtml(e.codigo || "—")}</small></div><span class="budget-value">${valores.biofast ? `R$ ${escapeHtml(valores.biofast)}` : "Não cadastrado"}</span><span class="budget-value">${valores.semCartao ? `R$ ${escapeHtml(valores.semCartao)}` : "Não cadastrado"}</span><button class="remove-budget no-print" data-remove-budget="${escapeHtml(e.id)}" title="Remover">×</button></div>`;
+  }).join("") : "";
+  $("totalBiofast").textContent = moedaTexto(totalBiofast); $("totalSemCartao").textContent = moedaTexto(totalNormal);
+  $("avisoOrcamento").textContent = (semBiofast || semNormal) ? `Atenção: ${semBiofast} item(ns) sem valor Biofast e ${semNormal} sem valor normal. Itens sem preço não entram no total.` : "Valores sujeitos a atualização. Confirme as informações antes do atendimento.";
+  document.querySelectorAll("[data-remove-budget]").forEach(button => button.addEventListener("click", () => removerOrcamento(button.dataset.removeBudget)));
+}
+
+$("buscaOrcamento").addEventListener("input", renderBuscaOrcamento);
+$("imprimirOrcamento").addEventListener("click", () => { if (!itensOrcamento.length) { mostrarToast("Adicione pelo menos um exame"); return; } window.print(); });
+$("dataOrcamento").value = new Date().toISOString().slice(0,10);
 
 function sessaoValida() {
   if (!sessao?.access_token) return false;

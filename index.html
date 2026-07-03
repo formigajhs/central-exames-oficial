@@ -29,6 +29,7 @@
     <nav class="tabs" aria-label="Áreas do sistema">
       <button class="tab active" data-view="exames">Exames</button>
       <button class="tab" data-view="convenios">Convênios</button>
+      <button class="tab" data-view="orcamento">Orçamento</button>
     </nav>
     <div class="session-area"><span class="online"><i></i> <span id="usuarioLogado">Banco conectado</span></span><button id="btnSair" class="logout">Sair</button></div>
   </header>
@@ -75,6 +76,34 @@
           <div id="listaConvenios" class="convenio-list"></div>
         </aside>
         <section id="detalheConvenio" class="convenio-detail"><div class="empty-state">Selecione um convênio para consultar.</div></section>
+      </div>
+    </section>
+
+    <section id="view-orcamento" class="view">
+      <div class="hero compact budget-hero">
+        <div><span class="eyebrow blue">SIMULAÇÃO DE VALORES</span><h1>Orçamento de Exames</h1><p>Monte uma lista e compare os valores com Cartão Biofast e sem cartão.</p></div>
+        <button class="primary blue-btn no-print" id="imprimirOrcamento">Imprimir orçamento</button>
+      </div>
+      <div class="budget-layout">
+        <aside class="budget-picker no-print">
+          <h2>Adicionar exames</h2>
+          <p>Pesquise pelo nome, sigla ou código.</p>
+          <label class="search budget-search"><span>⌕</span><input id="buscaOrcamento" placeholder="Buscar exame" autocomplete="off"></label>
+          <div class="budget-results" id="resultadosOrcamento"></div>
+        </aside>
+        <section class="budget-sheet" id="folhaOrcamento">
+          <div class="budget-sheet-head">
+            <div><span class="eyebrow">CENTRAL OPERACIONAL</span><h2>Orçamento de Exames</h2><p>Comparativo de valores particulares</p></div>
+            <div class="budget-meta"><label>Nome / referência<input id="nomeOrcamento" placeholder="Opcional"></label><label>Data<input id="dataOrcamento" type="date"></label></div>
+          </div>
+          <div class="budget-empty" id="orcamentoVazio">Pesquise e adicione exames para começar o orçamento.</div>
+          <div class="budget-table" id="itensOrcamento"></div>
+          <div class="budget-totals">
+            <article class="biofast-total"><small>TOTAL COM CARTÃO BIOFAST</small><strong id="totalBiofast">R$ 0,00</strong></article>
+            <article class="normal-total"><small>TOTAL SEM CARTÃO</small><strong id="totalSemCartao">R$ 0,00</strong></article>
+          </div>
+          <p class="budget-note" id="avisoOrcamento">Valores sujeitos a atualização. Confirme as informações antes do atendimento.</p>
+        </section>
       </div>
     </section>
   </main>
