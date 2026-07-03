@@ -63,12 +63,14 @@ function renderExames() {
   $("vazioExames").hidden = filtrados.length > 0;
   $("listaExames").innerHTML = filtrados.map(e => {
     const particular = (e.tipo || "Normal") === "Particular";
-    return `<article class="exam-row ${particular ? "particular" : ""}" data-id="${escapeHtml(e.id)}">
+    const statusAutorizacao = normalizar(e.autorizacao);
+    const classeAlerta = statusAutorizacao.includes("com anexo") ? "needs-attachment" : statusAutorizacao.startsWith("precisa autorizar") ? "needs-auth" : "";
+    return `<article class="exam-row ${particular ? "particular" : ""} ${classeAlerta}" data-id="${escapeHtml(e.id)}">
       <div><span class="cell-label">SIGLA</span><span class="sigla ${String(e.sigla || "").length > 12 ? "longa" : ""}" title="${escapeHtml(e.sigla)}">${escapeHtml(e.sigla)}</span></div>
       <div class="exam-name"><strong>${escapeHtml(e.nome)}</strong><small>Código ${escapeHtml(e.codigo || "—")}</small>${particular ? '<span class="particular-label">PARTICULAR</span>' : ""}</div>
-      <div><span class="cell-label">JEJUM</span><strong>${escapeHtml(e.tempo_jejum || "Sem informação")}</strong></div>
-      <div><span class="cell-label">AUTORIZAÇÃO</span><span class="badge ${statusClass(e.autorizacao)}">${escapeHtml(e.autorizacao || "—")}</span></div>
-      <div><span class="cell-label">TERMOS / PDF</span><span class="badge ${e.link_termo ? "pdf" : ""}">${e.link_termo ? "PDF disponível" : escapeHtml(e.termos || "Sem termo")}</span></div>
+      <div><span class="cell-label">◷ JEJUM</span><strong>${escapeHtml(e.tempo_jejum || "Sem informação")}</strong></div>
+      <div><span class="cell-label">◆ AUTORIZAÇÃO</span><span class="badge ${statusClass(e.autorizacao)}">${escapeHtml(e.autorizacao || "—")}</span></div>
+      <div><span class="cell-label">▤ TERMOS / PDF</span><span class="badge ${e.link_termo ? "pdf" : ""}">${e.link_termo ? "PDF disponível" : escapeHtml(e.termos || "Sem termo")}</span></div>
       <div class="quick-actions"><button class="mini-action" data-copy-code="${escapeHtml(e.codigo || "")}" title="Copiar código">⧉ Código</button><button class="mini-action" data-copy-all="${escapeHtml(e.id)}" title="Copiar todas as informações">⧉ Resumo</button></div>
     </article>`;
   }).join("");
@@ -93,7 +95,7 @@ function abrirExame(id) {
       <div class="detail-card"><small>TERMOS</small><strong>${escapeHtml(e.termos || "Não definido")}</strong></div>
       <div class="detail-card wide"><small>OBSERVAÇÕES</small><strong>${escapeHtml(e.observacao || "Sem observações")}</strong></div>
     </div>
-    <div class="action-row">${e.link_termo ? `<a class="action" href="${escapeHtml(e.link_termo)}" target="_blank" rel="noopener">Abrir termo PDF</a>` : ""}<button class="action" onclick="copiarResumo('${escapeHtml(e.id)}')">Copiar orientação</button><button class="action" id="editarExame">Editar exame</button></div>
+    <div class="action-row">${e.link_termo ? `<a class="action" href="${escapeHtml(e.link_termo)}" target="_blank" rel="noopener">▤ Abrir termo PDF</a>` : ""}<button class="action" onclick="copiarResumo('${escapeHtml(e.id)}')">Copiar orientação</button><button class="action admin-action" id="editarExame">✎ Editar exame</button></div>
     <form class="edit-form exam-edit-form" id="formExame" hidden>
       <h3>Editar exame</h3><div class="form-grid">
         <label class="field"><span>TIPO</span><select name="tipo"><option ${e.tipo !== "Particular" ? "selected" : ""}>Normal</option><option ${e.tipo === "Particular" ? "selected" : ""}>Particular</option></select></label>
