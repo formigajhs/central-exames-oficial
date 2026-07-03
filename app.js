@@ -14,6 +14,7 @@ let favoritosIds = new Set();
 let somenteFavoritos = false;
 let perfilAtual = null;
 let usuarios = [];
+const credenciaisConvenios = new Map();
 
 const perfilAtivo = () => Boolean(perfilAtual?.ativo);
 const podeOperar = () => perfilAtivo() && ["operador", "administrador"].includes(perfilAtual?.perfil);
@@ -243,6 +244,7 @@ function fecharDrawer() {
   $("drawer").classList.remove("open");
   $("drawer").setAttribute("aria-hidden", "true");
   setTimeout(() => $("drawerBackdrop").hidden = true, 220);
+  credenciaisConvenios.clear();
 }
 
 window.copiarResumo = async (id) => {
@@ -264,9 +266,27 @@ function renderConvenios() {
   document.querySelectorAll(".convenio-item").forEach(button => button.addEventListener("click", () => abrirConvenio(button.dataset.id)));
 }
 
+async function carregarCredencialConvenio(id) {
+  const botao = $("carregarCredencial");
+  if (botao) { botao.disabled = true; botao.textContent = "Verificando acesso..."; }
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/obter_credencial_convenio`, {
+    method:"POST",
+    headers:{...apiHeaders(),"Content-Type":"application/json"},
+    body:JSON.stringify({p_convenio_id:id})
+  });
+  if (!response.ok) { mostrarToast("Não foi possível liberar a credencial"); abrirConvenio(id); return; }
+  const dados = await response.json();
+  if (!dados[0]) { mostrarToast("Credencial não encontrada no cofre"); abrirConvenio(id); return; }
+  credenciaisConvenios.set(String(id), dados[0]);
+  abrirConvenio(id);
+  mostrarToast("Credencial liberada com segurança");
+}
+
 function abrirConvenio(id) {
+  if (convenioSelecionado && String(convenioSelecionado) !== String(id)) credenciaisConvenios.clear();
   convenioSelecionado = id;
   const c = convenios.find(item => String(item.id) === String(id));
+  const credencial = credenciaisConvenios.get(String(id));
   renderConvenios();
   const links = parseLinks(c.links_extras);
   const extras = links.map((link, index) => {
@@ -274,10 +294,16 @@ function abrirConvenio(id) {
     const nome = typeof link === "string" ? `Portal adicional ${index + 1}` : (link.nome || link.titulo || link.label || `Portal adicional ${index + 1}`);
     return url ? `<div class="extra-link"><strong>${escapeHtml(nome)}</strong><a href="${escapeHtml(url)}" target="_blank" rel="noopener">Abrir portal ↗</a></div>` : "";
   }).join("");
+  const credenciaisHtml = credencial ? `
+    <div class="credential protected"><div><small>USUÁRIO PROTEGIDO</small><strong>${escapeHtml(credencial.usuario || "Não informado")}</strong></div><button id="copiarUsuarioSeguro">Copiar</button></div>
+    <div class="credential protected"><div><small>SENHA PROTEGIDA</small><strong id="senhaConvenio">••••••••</strong></div><div><button id="mostrarSenha">Mostrar</button> <button id="copiarSenhaSegura">Copiar</button></div></div>` : `
+    <div class="credential-lock"><div><span class="lock-icon">◆</span><div><strong>Credenciais protegidas</strong><p>Usuário e senha permanecem criptografados até você solicitar.</p></div></div><button class="primary" id="carregarCredencial">Desbloquear credenciais</button></div>`;
+  const camposCredenciais = credencial ? `
+        <label class="field"><span>USUÁRIO PROTEGIDO</span><input name="usuario_seguro" value="${escapeHtml(credencial.usuario || "")}"></label>
+        <label class="field"><span>SENHA PROTEGIDA</span><input name="senha_segura" value="${escapeHtml(credencial.senha || "")}"></label>` : '<div class="secure-edit-note wide">Desbloqueie as credenciais antes de alterar usuário ou senha.</div>';
   $("detalheConvenio").innerHTML = `<div class="convenio-title"><div><span class="eyebrow blue">CONVÊNIO</span><h2>${escapeHtml(c.nome)}</h2><p>${escapeHtml(c.categoria || "")}</p></div><div class="title-actions"><span class="badge ${String(c.ativo) === "true" ? "green" : "red"}">${String(c.ativo) === "true" ? "Ativo" : "Inativo"}</span><button class="action" id="editarConvenio">Editar informações</button></div></div>
     <div class="portal-box"><h3>Portal principal</h3><p>Acesse diretamente o ambiente do convênio.</p>${c.site ? `<a href="${escapeHtml(c.site)}" target="_blank" rel="noopener">Abrir portal ↗</a>` : "Sem portal cadastrado"}</div>
-    <div class="credential"><div><small>USUÁRIO</small><strong>${escapeHtml(c.usuario || "Não informado")}</strong></div><button data-copy="${escapeHtml(c.usuario || "")}">Copiar</button></div>
-    <div class="credential"><div><small>SENHA</small><strong id="senhaConvenio">••••••••</strong></div><div><button id="mostrarSenha">Mostrar</button> <button data-copy="${escapeHtml(c.senha || "")}">Copiar</button></div></div>
+    ${credenciaisHtml}
     <div class="credential"><div><small>TELEFONE</small><strong>${escapeHtml(c.telefone || "Não informado")}</strong></div><button data-copy="${escapeHtml(c.telefone || "")}">Copiar</button></div>
     ${c.observacao ? `<div class="credential"><div><small>OBSERVAÇÕES</small><strong>${escapeHtml(c.observacao)}</strong></div></div>` : ""}
     <div class="extra-links"><h3>Outros portais</h3>${extras || "<p>Nenhum link adicional cadastrado.</p>"}</div>
@@ -286,14 +312,19 @@ function abrirConvenio(id) {
         <label class="field"><span>NOME</span><input name="nome" value="${escapeHtml(c.nome || "")}" required></label>
         <label class="field"><span>CATEGORIA</span><input name="categoria" value="${escapeHtml(c.categoria || "")}"></label>
         <label class="field wide"><span>PORTAL PRINCIPAL</span><input name="site" value="${escapeHtml(c.site || "")}" placeholder="https://..."></label>
-        <label class="field"><span>USUÁRIO</span><input name="usuario" value="${escapeHtml(c.usuario || "")}"></label>
-        <label class="field"><span>SENHA</span><input name="senha" value="${escapeHtml(c.senha || "")}"></label>
+        ${camposCredenciais}
         <label class="field"><span>TELEFONE</span><input name="telefone" value="${escapeHtml(c.telefone || "")}"></label>
         <label class="field wide"><span>OBSERVAÇÕES</span><textarea name="observacao">${escapeHtml(c.observacao || "")}</textarea></label>
         <label class="field wide"><span>LINKS EXTRAS (JSON)</span><textarea name="links_extras">${escapeHtml(typeof c.links_extras === "string" ? c.links_extras : JSON.stringify(c.links_extras || []))}</textarea></label>
       </div><div class="form-actions"><button class="primary" type="submit">Salvar alterações</button><button class="action" type="button" id="cancelarEdicaoConvenio">Cancelar</button></div>
     </form>`;
-  $("mostrarSenha").addEventListener("click", (event) => { const visible = $("senhaConvenio").textContent !== "••••••••"; $("senhaConvenio").textContent = visible ? "••••••••" : (c.senha || "Não informada"); event.currentTarget.textContent = visible ? "Mostrar" : "Ocultar"; });
+  if (credencial) {
+    $("mostrarSenha").addEventListener("click", (event) => { const visible = $("senhaConvenio").textContent !== "••••••••"; $("senhaConvenio").textContent = visible ? "••••••••" : (credencial.senha || "Não informada"); event.currentTarget.textContent = visible ? "Mostrar" : "Ocultar"; });
+    $("copiarUsuarioSeguro").addEventListener("click", async () => { await navigator.clipboard.writeText(credencial.usuario || ""); mostrarToast("Usuário copiado"); });
+    $("copiarSenhaSegura").addEventListener("click", async () => { await navigator.clipboard.writeText(credencial.senha || ""); mostrarToast("Senha copiada"); });
+  } else {
+    $("carregarCredencial").addEventListener("click", () => carregarCredencialConvenio(c.id));
+  }
   document.querySelectorAll("[data-copy]").forEach(button => button.addEventListener("click", async () => { await navigator.clipboard.writeText(button.dataset.copy); mostrarToast("Copiado"); }));
   $("editarConvenio").addEventListener("click", () => { $("formConvenio").hidden = false; $("formConvenio").scrollIntoView({behavior:"smooth", block:"start"}); });
   $("cancelarEdicaoConvenio").addEventListener("click", () => { $("formConvenio").hidden = true; });
@@ -302,9 +333,14 @@ function abrirConvenio(id) {
     const form = new FormData(event.currentTarget);
     let linksExtras;
     try { linksExtras = JSON.parse(form.get("links_extras") || "[]"); } catch { mostrarToast("Links extras precisam estar em formato válido"); return; }
-    const dados = { nome:form.get("nome"), categoria:form.get("categoria"), site:form.get("site"), usuario:form.get("usuario"), senha:form.get("senha"), telefone:form.get("telefone"), observacao:form.get("observacao"), links_extras:linksExtras };
+    const dados = { nome:form.get("nome"), categoria:form.get("categoria"), site:form.get("site"), telefone:form.get("telefone"), observacao:form.get("observacao"), links_extras:linksExtras };
     const response = await fetch(`${SUPABASE_URL}/rest/v1/convenios?id=eq.${encodeURIComponent(c.id)}`, {method:"PATCH", headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"}, body:JSON.stringify(dados)});
     if (!response.ok) { console.error(await response.text()); mostrarToast("O banco bloqueou a edição"); return; }
+    if (credencial) {
+      const respostaCredencial = await fetch(`${SUPABASE_URL}/rest/v1/rpc/salvar_credencial_convenio`, {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json"},body:JSON.stringify({p_convenio_id:c.id,p_usuario:form.get("usuario_seguro") || "",p_senha:form.get("senha_segura") || ""})});
+      if (!respostaCredencial.ok) { mostrarToast("Dados salvos, mas a credencial não foi atualizada"); return; }
+      credenciaisConvenios.set(String(c.id), {usuario:form.get("usuario_seguro") || "",senha:form.get("senha_segura") || ""});
+    }
     const atualizados = await response.json();
     const index = convenios.findIndex(item => String(item.id) === String(c.id));
     convenios[index] = atualizados[0] || {...c,...dados};
@@ -501,7 +537,7 @@ async function iniciar() {
   try {
     [exames, convenios] = await Promise.all([
       carregarExames(),
-      podeOperar() ? buscarTabela("convenios", "id,nome,categoria,site,usuario,senha,telefone,observacao,ativo,links_extras") : Promise.resolve([])
+      podeOperar() ? buscarTabela("convenios", "id,nome,categoria,site,telefone,observacao,ativo,links_extras") : Promise.resolve([])
     ]);
     await carregarFavoritos();
     exames.sort((a,b) => String(a.sigla).localeCompare(String(b.sigla), "pt-BR"));
