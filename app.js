@@ -14,7 +14,10 @@ let favoritosIds = new Set();
 let somenteFavoritos = false;
 let perfilAtual = null;
 let usuarios = [];
+let acessosCredenciais = [];
 const credenciaisConvenios = new Map();
+const RECOVERY_REDIRECT = "https://central-exames-oficial.vercel.app/";
+let tokenRecuperacao = null;
 
 const perfilAtivo = () => Boolean(perfilAtual?.ativo);
 const podeOperar = () => perfilAtivo() && ["operador", "administrador"].includes(perfilAtual?.perfil);
@@ -90,6 +93,16 @@ async function salvarUsuario(usuarioId) {
   usuarios = usuarios.map(usuario => String(usuario.usuario_id) === String(usuarioId) ? {...usuario,...atualizado} : usuario);
   renderUsuarios();
   mostrarToast(ativo ? "Usuário liberado" : "Usuário bloqueado");
+}
+
+async function carregarAuditoria() {
+  if (!ehAdministrador()) return;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/acessos_credenciais_convenios?select=id,convenio_id,usuario_email,acao,acessado_em&order=acessado_em.desc&limit=100`, {headers:apiHeaders()});
+  if (!response.ok) { $("listaAuditoria").innerHTML = '<div class="empty">Não foi possível carregar a auditoria.</div>'; return; }
+  acessosCredenciais = await response.json();
+  const nomes = new Map(convenios.map(item => [String(item.id), item.nome]));
+  const rotulos = {consultar:"Visualizou",atualizar:"Atualizou",criar:"Cadastrou"};
+  $("listaAuditoria").innerHTML = acessosCredenciais.length ? acessosCredenciais.map(item => `<article class="audit-row"><span class="audit-action ${escapeHtml(item.acao)}">${escapeHtml(rotulos[item.acao] || item.acao)}</span><div><strong>${escapeHtml(nomes.get(String(item.convenio_id)) || "Convênio removido")}</strong><small>${escapeHtml(item.usuario_email || "Usuário não identificado")}</small></div><time>${new Date(item.acessado_em).toLocaleString("pt-BR")}</time></article>`).join("") : '<div class="empty">Nenhum acesso registrado ainda.</div>';
 }
 
 async function carregarFavoritos() {
@@ -422,6 +435,7 @@ $("filtroTipo").addEventListener("change", renderExames);
 $("filtroFavoritos").addEventListener("click", () => { somenteFavoritos = !somenteFavoritos; $("filtroFavoritos").classList.toggle("active", somenteFavoritos); $("filtroFavoritos").textContent = somenteFavoritos ? "★ Meus favoritos" : "☆ Meus favoritos"; renderExames(); });
 $("buscaConvenio").addEventListener("input", renderConvenios);
 $("novoConvenio").addEventListener("click", abrirNovoConvenio);
+$("atualizarAuditoria").addEventListener("click", async () => { await carregarAuditoria(); mostrarToast("Auditoria atualizada"); });
 $("fecharDrawer").addEventListener("click", fecharDrawer);
 $("drawerBackdrop").addEventListener("click", fecharDrawer);
 $("voltarTopo").addEventListener("click", () => window.scrollTo({ top:0, behavior:"smooth" }));
@@ -490,14 +504,86 @@ function mostrarLogin(mensagem = "") {
 function alternarTelaAcesso(cadastro) {
   $("formLogin").hidden = cadastro;
   $("formCadastro").hidden = !cadastro;
+  $("formRecuperar").hidden = true;
+  $("formNovaSenha").hidden = true;
   $("loginErro").hidden = true;
   $("cadastroErro").hidden = true;
   document.querySelector(".login-card h1").textContent = cadastro ? "Crie seu acesso." : "Entre para continuar.";
   document.querySelector(".login-card > p").textContent = cadastro ? "O novo acesso começa com o perfil Consulta." : "Use o e-mail e a senha cadastrados no Supabase.";
 }
 
+function mostrarRecuperacaoSenha() {
+  $("formLogin").hidden = true;
+  $("formCadastro").hidden = true;
+  $("formRecuperar").hidden = false;
+  $("formNovaSenha").hidden = true;
+  $("recuperarErro").hidden = true;
+  document.querySelector(".login-card h1").textContent = "Recupere sua senha.";
+  document.querySelector(".login-card > p").textContent = "Enviaremos um link seguro para o e-mail cadastrado.";
+}
+
+function mostrarNovaSenha() {
+  $("formLogin").hidden = true;
+  $("formCadastro").hidden = true;
+  $("formRecuperar").hidden = true;
+  $("formNovaSenha").hidden = false;
+  $("novaSenhaErro").hidden = true;
+  $("loginGate").classList.remove("hidden");
+  document.querySelector(".login-card h1").textContent = "Crie uma nova senha.";
+  document.querySelector(".login-card > p").textContent = "Use pelo menos 8 caracteres e não compartilhe sua senha.";
+}
+
 $("mostrarCadastro").addEventListener("click", () => alternarTelaAcesso(true));
 $("voltarLogin").addEventListener("click", () => alternarTelaAcesso(false));
+$("mostrarRecuperacao").addEventListener("click", mostrarRecuperacaoSenha);
+document.querySelectorAll(".voltar-login").forEach(button => button.addEventListener("click", () => alternarTelaAcesso(false)));
+
+$("formRecuperar").addEventListener("submit", async event => {
+  event.preventDefault();
+  const email = $("recuperarEmail").value.trim();
+  $("btnRecuperar").disabled = true;
+  $("btnRecuperar").textContent = "Enviando...";
+  $("recuperarErro").hidden = true;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,redirect_to:RECOVERY_REDIRECT})});
+    if (!response.ok) throw new Error("Não foi possível enviar o e-mail agora.");
+    alternarTelaAcesso(false);
+    $("loginErro").hidden = false;
+    $("loginErro").classList.add("success-message");
+    $("loginErro").textContent = "Se o e-mail estiver cadastrado, o link de recuperação será enviado.";
+  } catch (error) {
+    $("recuperarErro").hidden = false;
+    $("recuperarErro").textContent = error.message;
+  } finally {
+    $("btnRecuperar").disabled = false;
+    $("btnRecuperar").textContent = "Enviar link de recuperação";
+  }
+});
+
+$("formNovaSenha").addEventListener("submit", async event => {
+  event.preventDefault();
+  const password = $("novaSenha").value;
+  const confirmacao = $("confirmarNovaSenha").value;
+  if (password !== confirmacao) { $("novaSenhaErro").hidden = false; $("novaSenhaErro").textContent = "As duas senhas precisam ser iguais."; return; }
+  $("btnNovaSenha").disabled = true;
+  $("btnNovaSenha").textContent = "Salvando...";
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${tokenRecuperacao}`,"Content-Type":"application/json"},body:JSON.stringify({password})});
+  if (!response.ok) {
+    $("novaSenhaErro").hidden = false;
+    $("novaSenhaErro").textContent = "O link expirou ou a senha não pôde ser alterada.";
+    $("btnNovaSenha").disabled = false;
+    $("btnNovaSenha").textContent = "Salvar nova senha";
+    return;
+  }
+  tokenRecuperacao = null;
+  history.replaceState(null, "", location.pathname);
+  alternarTelaAcesso(false);
+  $("loginErro").hidden = false;
+  $("loginErro").classList.add("success-message");
+  $("loginErro").textContent = "Senha alterada. Agora você já pode entrar.";
+  $("btnNovaSenha").disabled = false;
+  $("btnNovaSenha").textContent = "Salvar nova senha";
+});
 
 $("formCadastro").addEventListener("submit", async event => {
   event.preventDefault();
@@ -608,12 +694,21 @@ async function iniciar() {
     $("loadingExames").textContent = `${exames.length} registros`;
     renderExames(); renderConvenios();
     await carregarUsuarios();
+    await carregarAuditoria();
   } catch (error) {
     console.error(error); $("loadingExames").textContent = "Falha ao conectar"; mostrarToast("Não foi possível carregar o banco");
   }
 }
 
 (async function iniciarAplicacao() {
+  const parametrosRecuperacao = new URLSearchParams(location.hash.replace(/^#/, ""));
+  if (parametrosRecuperacao.get("type") === "recovery" && parametrosRecuperacao.get("access_token")) {
+    tokenRecuperacao = parametrosRecuperacao.get("access_token");
+    sessao = null;
+    apagarSessao();
+    mostrarNovaSenha();
+    return;
+  }
   if (!sessaoValida()) {
     sessao = null;
     apagarSessao();
