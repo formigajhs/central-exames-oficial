@@ -27,6 +27,11 @@ const ehAdministrador = () => perfilAtivo() && perfilAtual?.perfil === "administ
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 const normalizar = (value = "") => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const normalizarUrl = (value = "") => {
+  const url = String(value).trim();
+  if (!url) return "";
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`;
+};
 
 async function buscarTabela(tabela, select = "*") {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}?select=${encodeURIComponent(select)}`, { headers: apiHeaders() });
@@ -335,7 +340,7 @@ function abrirNovoConvenio() {
       <div class="form-grid">
         <label class="field"><span>NOME</span><input name="nome" required placeholder="Nome do convênio"></label>
         <label class="field"><span>CATEGORIA</span><input name="categoria" value="Convênio médico"></label>
-        <label class="field wide"><span>PORTAL PRINCIPAL</span><input name="site" type="url" placeholder="https://..."></label>
+        <label class="field wide"><span>PORTAL PRINCIPAL</span><input name="site" type="text" inputmode="url" placeholder="site.com.br ou https://site.com.br"></label>
         <label class="field secure-field"><span>USUÁRIO DO PORTAL</span><input name="usuario" autocomplete="off"></label>
         <label class="field secure-field"><span>SENHA DO PORTAL</span><input name="senha" type="password" autocomplete="new-password"></label>
         <label class="field"><span>TELEFONE</span><input name="telefone"></label>
@@ -364,7 +369,7 @@ function abrirNovoConvenio() {
     const payload = {
       p_nome:String(form.get("nome") || "").trim(),
       p_categoria:String(form.get("categoria") || "").trim(),
-      p_site:String(form.get("site") || "").trim(),
+      p_site:normalizarUrl(form.get("site")),
       p_usuario:String(form.get("usuario") || ""),
       p_senha:String(form.get("senha") || ""),
       p_telefone:String(form.get("telefone") || "").trim(),
@@ -455,7 +460,7 @@ function abrirConvenio(id) {
     const form = new FormData(event.currentTarget);
     let linksExtras;
     try { linksExtras = JSON.parse(form.get("links_extras") || "[]"); } catch { mostrarToast("Links extras precisam estar em formato válido"); return; }
-    const dados = { nome:form.get("nome"), categoria:form.get("categoria"), site:form.get("site"), telefone:form.get("telefone"), observacao:form.get("observacao"), links_extras:linksExtras };
+    const dados = { nome:form.get("nome"), categoria:form.get("categoria"), site:normalizarUrl(form.get("site")), telefone:form.get("telefone"), observacao:form.get("observacao"), links_extras:linksExtras };
     const response = await fetch(`${SUPABASE_URL}/rest/v1/convenios?id=eq.${encodeURIComponent(c.id)}`, {method:"PATCH", headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"}, body:JSON.stringify(dados)});
     if (!response.ok) { console.error(await response.text()); mostrarToast("O banco bloqueou a edição"); return; }
     if (credencial) {
