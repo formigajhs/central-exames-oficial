@@ -149,12 +149,12 @@ async function salvarUsuario(usuarioId) {
 
 async function carregarAuditoria() {
   if (!ehAdministrador()) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/acessos_credenciais_convenios?select=id,convenio_id,usuario_email,acao,acessado_em&order=acessado_em.desc&limit=100`, {headers:apiHeaders()});
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/acessos_credenciais_convenios?select=id,convenio_id,convenio_nome,usuario_email,acao,acessado_em&order=acessado_em.desc&limit=100`, {headers:apiHeaders()});
   if (!response.ok) { $("listaAuditoria").innerHTML = '<div class="empty">Não foi possível carregar a auditoria.</div>'; return; }
   acessosCredenciais = await response.json();
   const nomes = new Map(convenios.map(item => [String(item.id), item.nome]));
-  const rotulos = {consultar:"Visualizou",atualizar:"Atualizou",criar:"Cadastrou"};
-  $("listaAuditoria").innerHTML = acessosCredenciais.length ? acessosCredenciais.map(item => `<article class="audit-row"><span class="audit-action ${escapeHtml(item.acao)}">${escapeHtml(rotulos[item.acao] || item.acao)}</span><div><strong>${escapeHtml(nomes.get(String(item.convenio_id)) || "Convênio removido")}</strong><small>${escapeHtml(item.usuario_email || "Usuário não identificado")}</small></div><time>${new Date(item.acessado_em).toLocaleString("pt-BR")}</time></article>`).join("") : '<div class="empty">Nenhum acesso registrado ainda.</div>';
+  const rotulos = {consultar:"Visualizou",atualizar:"Atualizou",criar:"Cadastrou",desativar:"Desativou",reativar:"Reativou",excluir:"Excluiu"};
+  $("listaAuditoria").innerHTML = acessosCredenciais.length ? acessosCredenciais.map(item => `<article class="audit-row"><span class="audit-action ${escapeHtml(item.acao)}">${escapeHtml(rotulos[item.acao] || item.acao)}</span><div><strong>${escapeHtml(nomes.get(String(item.convenio_id)) || item.convenio_nome || "Convênio removido")}</strong><small>${escapeHtml(item.usuario_email || "Usuário não identificado")}</small></div><time>${new Date(item.acessado_em).toLocaleString("pt-BR")}</time></article>`).join("") : '<div class="empty">Nenhum acesso registrado ainda.</div>';
 }
 
 async function carregarFavoritos() {
@@ -165,7 +165,7 @@ async function carregarFavoritos() {
 }
 
 async function carregarExames() {
-  const camposNovos = "id,tipo,sigla,nome,codigo,autorizacao,anexo,termos,tempo_jejum,link_termo,observacao,valor_cartao_biofast,valor_sem_cartao";
+  const camposNovos = "id,tipo,sigla,nome,codigo,autorizacao,anexo,termos,tempo_jejum,link_termo,observacao,valor_cartao_biofast,valor_sem_cartao,ativo";
   try {
     return await buscarTabela("exames", camposNovos);
   } catch (error) {
@@ -206,11 +206,12 @@ function renderExames() {
   $("vazioExames").hidden = filtrados.length > 0;
   $("listaExames").innerHTML = filtrados.map(e => {
     const particular = (e.tipo || "Normal") === "Particular";
+    const inativo = e.ativo === false;
     const statusAutorizacao = normalizar(e.autorizacao);
     const classeAlerta = statusAutorizacao.includes("com anexo") ? "needs-attachment" : statusAutorizacao.startsWith("precisa autorizar") ? "needs-auth" : "";
-    return `<article class="exam-row ${particular ? "particular" : ""} ${classeAlerta}" data-id="${escapeHtml(e.id)}">
+    return `<article class="exam-row ${particular ? "particular" : ""} ${inativo ? "inactive-record" : ""} ${classeAlerta}" data-id="${escapeHtml(e.id)}">
       <div><span class="cell-label">SIGLA</span><button class="favorite-btn ${favoritosIds.has(String(e.id)) ? "active" : ""}" data-favorite="${escapeHtml(e.id)}" title="Favoritar">${favoritosIds.has(String(e.id)) ? "★" : "☆"}</button><span class="sigla ${String(e.sigla || "").length > 12 ? "longa" : ""}" title="${escapeHtml(e.sigla)}">${escapeHtml(e.sigla)}</span></div>
-      <div class="exam-name"><strong>${escapeHtml(e.nome)}</strong><small>Código ${escapeHtml(e.codigo || "—")}</small>${particular ? '<span class="particular-label">PARTICULAR</span>' : ""}</div>
+      <div class="exam-name"><strong>${escapeHtml(e.nome)}</strong><small>Código ${escapeHtml(e.codigo || "—")}</small>${particular ? '<span class="particular-label">PARTICULAR</span>' : ""}${inativo ? '<span class="inactive-label">INATIVO</span>' : ""}</div>
       <div><span class="cell-label">◷ JEJUM</span><strong>${escapeHtml(e.tempo_jejum || "Sem informação")}</strong></div>
       <div><span class="cell-label">◆ AUTORIZAÇÃO</span><span class="badge ${statusClass(e.autorizacao)}">${escapeHtml(e.autorizacao || "—")}</span></div>
       <div><span class="cell-label">▤ TERMOS / PDF</span><span class="badge ${e.link_termo ? "pdf" : ""}">${e.link_termo ? "PDF disponível" : escapeHtml(e.termos || "Sem termo")}</span></div>
@@ -248,7 +249,7 @@ function abrirExame(id) {
       <div class="detail-card"><small>TERMOS</small><strong>${escapeHtml(e.termos || "Não definido")}</strong></div>
       <div class="detail-card wide"><small>OBSERVAÇÕES</small><strong>${escapeHtml(e.observacao || "Sem observações")}</strong></div>
     </div>
-    <div class="action-row">${e.link_termo ? `<a class="action" href="${escapeHtml(e.link_termo)}" target="_blank" rel="noopener">▤ Abrir termo PDF</a>` : ""}<button class="action" onclick="copiarResumo('${escapeHtml(e.id)}')">Copiar orientação</button>${podeOperar() ? '<button class="action" id="verHistorico">↺ Histórico</button><button class="action admin-action" id="editarExame">✎ Editar exame</button>' : ""}</div>
+    <div class="action-row">${e.link_termo ? `<a class="action" href="${escapeHtml(e.link_termo)}" target="_blank" rel="noopener">▤ Abrir termo PDF</a>` : ""}<button class="action" onclick="copiarResumo('${escapeHtml(e.id)}')">Copiar orientação</button>${podeOperar() ? '<button class="action" id="verHistorico">↺ Histórico</button><button class="action admin-action" id="editarExame">✎ Editar exame</button>' : ""}${ehAdministrador() ? `<button class="action status-action" id="statusExame">${e.ativo === false ? "Reativar exame" : "Desativar exame"}</button><button class="action danger-action" id="excluirExame">Excluir exame</button>` : ""}</div>
     <section class="history-panel" id="historicoExame" hidden><h3>Histórico de alterações</h3><div id="listaHistorico">Carregando...</div></section>
     <form class="edit-form exam-edit-form" id="formExame" hidden>
       <h3>Editar exame</h3><div class="form-grid">
@@ -273,6 +274,10 @@ function abrirExame(id) {
     $("editarExame").addEventListener("click", () => { $("formExame").hidden = false; $("formExame").scrollIntoView({behavior:"smooth",block:"start"}); });
     $("verHistorico").addEventListener("click", () => carregarHistorico(e.id));
   }
+  if (ehAdministrador()) {
+    $("statusExame").addEventListener("click", () => alterarStatusExame(e.id, e.ativo === false));
+    $("excluirExame").addEventListener("click", () => excluirExame(e.id));
+  }
   $("cancelarEdicaoExame").addEventListener("click", () => { $("formExame").hidden = true; });
   $("formExame").addEventListener("submit", async event => {
     event.preventDefault();
@@ -289,6 +294,63 @@ function abrirExame(id) {
     const index = exames.findIndex(item => String(item.id) === String(e.id));
     exames[index] = atualizados[0] || {...e,...dados};
     renderExames(); abrirExame(e.id); mostrarToast("Exame atualizado");
+  });
+}
+
+async function alterarStatusExame(id, ativo) {
+  const exame = exames.find(item => String(item.id) === String(id));
+  if (!ehAdministrador() || !exame) return;
+  if (!confirm(`${ativo ? "Reativar" : "Desativar"} o exame ${exame.sigla} — ${exame.nome}?`)) return;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(id)}`, {method:"PATCH",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({ativo})});
+  if (!response.ok) { mostrarToast("Não foi possível alterar o status"); return; }
+  exame.ativo = ativo;
+  renderExames(); abrirExame(id); mostrarToast(ativo ? "Exame reativado" : "Exame desativado");
+}
+
+async function excluirExame(id) {
+  const exame = exames.find(item => String(item.id) === String(id));
+  if (!ehAdministrador() || !exame) return;
+  if (!confirm(`Excluir definitivamente ${exame.sigla} — ${exame.nome}? Esta ação não pode ser desfeita.`)) return;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(id)}`, {method:"DELETE",headers:apiHeaders()});
+  if (!response.ok) { mostrarToast("Não foi possível excluir o exame"); return; }
+  exames = exames.filter(item => String(item.id) !== String(id));
+  fecharDrawer(); renderExames(); mostrarToast("Exame excluído");
+}
+
+function abrirNovoExame() {
+  $("drawerContent").innerHTML = `<span class="detail-kicker">NOVO CADASTRO</span><h2>Novo exame</h2><p>Preencha as informações operacionais do exame.</p>
+    <form class="edit-form exam-edit-form" id="formNovoExame">
+      <div class="form-grid">
+        <label class="field"><span>TIPO</span><select name="tipo"><option>Normal</option><option>Particular</option></select></label>
+        <label class="field"><span>SIGLA</span><input name="sigla" required></label>
+        <label class="field wide"><span>NOME DO EXAME</span><input name="nome" required></label>
+        <label class="field"><span>CÓDIGO</span><input name="codigo"></label>
+        <label class="field"><span>JEJUM / PREPARO</span><input name="tempo_jejum"></label>
+        <label class="field"><span>AUTORIZAÇÃO</span><select name="autorizacao"><option>Não precisa</option><option>Precisa autorizar</option><option>Precisa autorizar com anexo</option></select></label>
+        <label class="field"><span>ANEXO</span><select name="anexo"><option>Não</option><option>Sim</option></select></label>
+        <label class="field"><span>TERMOS</span><select name="termos"><option value="">Não definido</option><option>Não</option><option>Sim</option></select></label>
+        <label class="field wide"><span>LINK DO TERMO PDF</span><input name="link_termo" placeholder="site.com/termo.pdf"></label>
+        <label class="field price-field"><span>VALOR COM CARTÃO BIOFAST</span><input name="valor_biofast" placeholder="0,00"></label>
+        <label class="field price-field"><span>VALOR SEM CARTÃO</span><input name="valor_sem_cartao" placeholder="0,00"></label>
+        <label class="field wide"><span>OBSERVAÇÕES</span><textarea name="observacao"></textarea></label>
+      </div>
+      <div class="form-actions"><button class="primary" id="salvarNovoExame" type="submit">Cadastrar exame</button><button class="action" id="cancelarNovoExame" type="button">Cancelar</button></div>
+    </form>`;
+  $("drawerBackdrop").hidden = false;
+  $("drawer").classList.add("open");
+  $("drawer").setAttribute("aria-hidden", "false");
+  $("cancelarNovoExame").addEventListener("click", fecharDrawer);
+  $("formNovoExame").addEventListener("submit", async event => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const moeda = valor => { const texto=String(valor||"").trim(); return texto ? Number(texto.replace(/\./g,"").replace(",",".")) : null; };
+    const dados = {tipo:form.get("tipo"),sigla:String(form.get("sigla")||"").trim().toUpperCase(),nome:String(form.get("nome")||"").trim(),codigo:String(form.get("codigo")||"").trim(),tempo_jejum:String(form.get("tempo_jejum")||"").trim(),autorizacao:form.get("autorizacao"),anexo:form.get("anexo"),termos:form.get("termos"),link_termo:normalizarUrl(form.get("link_termo")),observacao:String(form.get("observacao")||"").trim(),valor_cartao_biofast:moeda(form.get("valor_biofast")),valor_sem_cartao:moeda(form.get("valor_sem_cartao")),ativo:true};
+    const botao = $("salvarNovoExame"); botao.disabled=true; botao.textContent="Cadastrando...";
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/exames`, {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(dados)});
+    if (!response.ok) { console.error(await response.text()); mostrarToast("Não foi possível cadastrar o exame"); botao.disabled=false; botao.textContent="Cadastrar exame"; return; }
+    const criado = (await response.json())[0];
+    exames.push(criado); exames.sort((a,b)=>String(a.sigla).localeCompare(String(b.sigla),"pt-BR"));
+    renderExames(); fecharDrawer(); mostrarToast("Exame cadastrado");
   });
 }
 
@@ -327,7 +389,7 @@ function parseLinks(value) {
 function renderConvenios() {
   const termo = normalizar($("buscaConvenio").value);
   const filtrados = convenios.filter(c => normalizar(`${c.nome} ${c.categoria}`).includes(termo));
-  $("listaConvenios").innerHTML = filtrados.map(c => `<button class="convenio-item ${String(c.id) === String(convenioSelecionado) ? "active" : ""}" data-id="${escapeHtml(c.id)}"><strong>${escapeHtml(c.nome)}</strong><small>${escapeHtml(c.categoria || "Convênio")}</small></button>`).join("");
+  $("listaConvenios").innerHTML = filtrados.map(c => `<button class="convenio-item ${c.ativo === false ? "inactive-record" : ""} ${String(c.id) === String(convenioSelecionado) ? "active" : ""}" data-id="${escapeHtml(c.id)}"><strong>${escapeHtml(c.nome)}</strong><small>${escapeHtml(c.categoria || "Convênio")}${c.ativo === false ? " · INATIVO" : ""}</small></button>`).join("");
   document.querySelectorAll(".convenio-item").forEach(button => button.addEventListener("click", () => abrirConvenio(button.dataset.id)));
 }
 
@@ -428,7 +490,7 @@ function abrirConvenio(id) {
   const camposCredenciais = credencial ? `
         <label class="field"><span>USUÁRIO PROTEGIDO</span><input name="usuario_seguro" value="${escapeHtml(credencial.usuario || "")}"></label>
         <label class="field"><span>SENHA PROTEGIDA</span><input name="senha_segura" value="${escapeHtml(credencial.senha || "")}"></label>` : '<div class="secure-edit-note wide">Desbloqueie as credenciais antes de alterar usuário ou senha.</div>';
-  $("detalheConvenio").innerHTML = `<div class="convenio-title"><div><span class="eyebrow blue">CONVÊNIO</span><h2>${escapeHtml(c.nome)}</h2><p>${escapeHtml(c.categoria || "")}</p></div><div class="title-actions"><span class="badge ${String(c.ativo) === "true" ? "green" : "red"}">${String(c.ativo) === "true" ? "Ativo" : "Inativo"}</span><button class="action" id="editarConvenio">Editar informações</button></div></div>
+  $("detalheConvenio").innerHTML = `<div class="convenio-title"><div><span class="eyebrow blue">CONVÊNIO</span><h2>${escapeHtml(c.nome)}</h2><p>${escapeHtml(c.categoria || "")}</p></div><div class="title-actions"><span class="badge ${String(c.ativo) === "true" ? "green" : "red"}">${String(c.ativo) === "true" ? "Ativo" : "Inativo"}</span><button class="action" id="editarConvenio">Editar informações</button>${ehAdministrador() ? `<button class="action status-action" id="statusConvenio">${c.ativo === false ? "Reativar" : "Desativar"}</button><button class="action danger-action" id="excluirConvenio">Excluir</button>` : ""}</div></div>
     <div class="portal-box"><h3>Portal principal</h3><p>Acesse diretamente o ambiente do convênio.</p>${c.site ? `<a href="${escapeHtml(c.site)}" target="_blank" rel="noopener">Abrir portal ↗</a>` : "Sem portal cadastrado"}</div>
     ${credenciaisHtml}
     <div class="credential"><div><small>TELEFONE</small><strong>${escapeHtml(c.telefone || "Não informado")}</strong></div><button data-copy="${escapeHtml(c.telefone || "")}">Copiar</button></div>
@@ -454,6 +516,10 @@ function abrirConvenio(id) {
   }
   document.querySelectorAll("[data-copy]").forEach(button => button.addEventListener("click", async () => { await navigator.clipboard.writeText(button.dataset.copy); mostrarToast("Copiado"); }));
   $("editarConvenio").addEventListener("click", () => { $("formConvenio").hidden = false; $("formConvenio").scrollIntoView({behavior:"smooth", block:"start"}); });
+  if (ehAdministrador()) {
+    $("statusConvenio").addEventListener("click", () => alterarStatusConvenio(c.id, c.ativo === false));
+    $("excluirConvenio").addEventListener("click", () => excluirConvenio(c.id));
+  }
   $("cancelarEdicaoConvenio").addEventListener("click", () => { $("formConvenio").hidden = true; });
   $("formConvenio").addEventListener("submit", async event => {
     event.preventDefault();
@@ -475,6 +541,29 @@ function abrirConvenio(id) {
   });
 }
 
+async function alterarStatusConvenio(id, ativo) {
+  const convenio = convenios.find(item => String(item.id) === String(id));
+  if (!ehAdministrador() || !convenio) return;
+  if (!confirm(`${ativo ? "Reativar" : "Desativar"} o convênio ${convenio.nome}?`)) return;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/convenios?id=eq.${encodeURIComponent(id)}`, {method:"PATCH",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({ativo})});
+  if (!response.ok) { mostrarToast("Não foi possível alterar o status"); return; }
+  convenio.ativo = ativo;
+  renderConvenios(); abrirConvenio(id); await carregarAuditoria();
+  mostrarToast(ativo ? "Convênio reativado" : "Convênio desativado");
+}
+
+async function excluirConvenio(id) {
+  const convenio = convenios.find(item => String(item.id) === String(id));
+  if (!ehAdministrador() || !convenio) return;
+  if (!confirm(`Excluir definitivamente o convênio ${convenio.nome} e suas credenciais criptografadas?`)) return;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/excluir_convenio_seguro`, {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json"},body:JSON.stringify({p_convenio_id:id})});
+  if (!response.ok) { mostrarToast("Não foi possível excluir o convênio"); return; }
+  convenios = convenios.filter(item => String(item.id) !== String(id));
+  convenioSelecionado = null; credenciaisConvenios.clear(); renderConvenios();
+  $("detalheConvenio").innerHTML = '<div class="empty-state">Convênio excluído. Selecione outro cadastro.</div>';
+  await carregarAuditoria(); mostrarToast("Convênio e credenciais excluídos");
+}
+
 function mostrarToast(texto) { $("toast").textContent = texto; $("toast").classList.add("show"); setTimeout(() => $("toast").classList.remove("show"), 1800); }
 
 document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
@@ -482,6 +571,7 @@ document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", (
   tab.classList.add("active"); $("view-" + tab.dataset.view).classList.add("active");
 }));
 $("buscaExame").addEventListener("input", renderExames);
+$("novoExame").addEventListener("click", abrirNovoExame);
 $("filtroAutorizacao").addEventListener("change", renderExames);
 $("filtroTipo").addEventListener("change", renderExames);
 $("filtroFavoritos").addEventListener("click", () => { somenteFavoritos = !somenteFavoritos; $("filtroFavoritos").classList.toggle("active", somenteFavoritos); $("filtroFavoritos").textContent = somenteFavoritos ? "★ Meus favoritos" : "☆ Meus favoritos"; renderExames(); });

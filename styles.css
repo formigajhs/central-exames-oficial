@@ -80,3 +80,6 @@ body{background:radial-gradient(circle at 8% 8%,rgba(74,222,128,.13),transparent
 
 /* Correção de visibilidade dos formulários de acesso */
 .login-form[hidden]{display:none!important}.login-gate{overflow:auto}.login-card{max-height:calc(100vh - 48px);overflow:auto}
+
+/* Administração de cadastros */
+.inactive-record{opacity:.62;background:#f3f5f4!important}.inactive-label{display:inline-flex;margin:7px 0 0 7px;padding:4px 7px;border-radius:99px;background:#e3e7e5;color:#68736e;font-size:8px;font-weight:900}.title-actions{display:flex;gap:7px;align-items:center;justify-content:flex-end;flex-wrap:wrap}.status-action{background:#fff7e8;border-color:#edcf96;color:#8a5700}.danger-action{background:#fff0f0;border-color:#efc1c1;color:#b02731}.danger-action:hover{background:#d93e49;color:#fff}.audit-action.desativar{background:#fff0dc;color:#9b5a00}.audit-action.reativar{background:#e4f7ed;color:#13704d}.audit-action.excluir{background:#ffe8e8;color:#b02731}
