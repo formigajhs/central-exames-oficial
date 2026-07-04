@@ -266,6 +266,68 @@ function renderConvenios() {
   document.querySelectorAll(".convenio-item").forEach(button => button.addEventListener("click", () => abrirConvenio(button.dataset.id)));
 }
 
+function abrirNovoConvenio() {
+  convenioSelecionado = null;
+  credenciaisConvenios.clear();
+  renderConvenios();
+  $("detalheConvenio").innerHTML = `<div class="convenio-title"><div><span class="eyebrow blue">NOVO CADASTRO</span><h2>Novo convênio</h2><p>As credenciais serão enviadas diretamente para o cofre criptografado.</p></div><span class="badge green">Cadastro seguro</span></div>
+    <form class="edit-form new-convenio-form" id="formNovoConvenio">
+      <div class="form-grid">
+        <label class="field"><span>NOME</span><input name="nome" required placeholder="Nome do convênio"></label>
+        <label class="field"><span>CATEGORIA</span><input name="categoria" value="Convênio médico"></label>
+        <label class="field wide"><span>PORTAL PRINCIPAL</span><input name="site" type="url" placeholder="https://..."></label>
+        <label class="field secure-field"><span>USUÁRIO DO PORTAL</span><input name="usuario" autocomplete="off"></label>
+        <label class="field secure-field"><span>SENHA DO PORTAL</span><input name="senha" type="password" autocomplete="new-password"></label>
+        <label class="field"><span>TELEFONE</span><input name="telefone"></label>
+        <label class="field wide"><span>OBSERVAÇÕES</span><textarea name="observacao"></textarea></label>
+        <label class="field wide"><span>OUTROS PORTAIS (JSON, OPCIONAL)</span><textarea name="links_extras" placeholder='[{"nome":"Outro portal","url":"https://..."}]'></textarea></label>
+      </div>
+      <div class="secure-form-message">◆ Usuário e senha não serão gravados na tabela comum.</div>
+      <div class="form-actions"><button class="primary blue-btn" id="salvarNovoConvenio" type="submit">Criar convênio seguro</button><button class="action" id="cancelarNovoConvenio" type="button">Cancelar</button></div>
+    </form>`;
+  $("cancelarNovoConvenio").addEventListener("click", () => { $("detalheConvenio").innerHTML = '<div class="empty-state">Selecione um convênio para consultar.</div>'; });
+  $("formNovoConvenio").addEventListener("submit", async event => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    let linksExtras = [];
+    try {
+      const textoLinks = String(form.get("links_extras") || "").trim();
+      linksExtras = textoLinks ? JSON.parse(textoLinks) : [];
+      if (!Array.isArray(linksExtras)) throw new Error();
+    } catch {
+      mostrarToast("Outros portais precisam estar em formato válido");
+      return;
+    }
+    const botao = $("salvarNovoConvenio");
+    botao.disabled = true;
+    botao.textContent = "Protegendo e salvando...";
+    const payload = {
+      p_nome:String(form.get("nome") || "").trim(),
+      p_categoria:String(form.get("categoria") || "").trim(),
+      p_site:String(form.get("site") || "").trim(),
+      p_usuario:String(form.get("usuario") || ""),
+      p_senha:String(form.get("senha") || ""),
+      p_telefone:String(form.get("telefone") || "").trim(),
+      p_observacao:String(form.get("observacao") || "").trim(),
+      p_links_extras:linksExtras
+    };
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/criar_convenio_seguro`, {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    if (!response.ok) {
+      console.error(await response.text());
+      mostrarToast("Não foi possível criar o convênio");
+      botao.disabled = false;
+      botao.textContent = "Criar convênio seguro";
+      return;
+    }
+    const novoId = await response.json();
+    convenios = await buscarTabela("convenios", "id,nome,categoria,site,telefone,observacao,ativo,links_extras");
+    convenios.sort((a,b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"));
+    renderConvenios();
+    abrirConvenio(novoId);
+    mostrarToast("Convênio criado com credenciais protegidas");
+  });
+}
+
 async function carregarCredencialConvenio(id) {
   const botao = $("carregarCredencial");
   if (botao) { botao.disabled = true; botao.textContent = "Verificando acesso..."; }
@@ -359,6 +421,7 @@ $("filtroAutorizacao").addEventListener("change", renderExames);
 $("filtroTipo").addEventListener("change", renderExames);
 $("filtroFavoritos").addEventListener("click", () => { somenteFavoritos = !somenteFavoritos; $("filtroFavoritos").classList.toggle("active", somenteFavoritos); $("filtroFavoritos").textContent = somenteFavoritos ? "★ Meus favoritos" : "☆ Meus favoritos"; renderExames(); });
 $("buscaConvenio").addEventListener("input", renderConvenios);
+$("novoConvenio").addEventListener("click", abrirNovoConvenio);
 $("fecharDrawer").addEventListener("click", fecharDrawer);
 $("drawerBackdrop").addEventListener("click", fecharDrawer);
 $("voltarTopo").addEventListener("click", () => window.scrollTo({ top:0, behavior:"smooth" }));
