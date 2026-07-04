@@ -15,10 +15,7 @@ let somenteFavoritos = false;
 let perfilAtual = null;
 let usuarios = [];
 let acessosCredenciais = [];
-let usuarioRedefinicao = null;
 const credenciaisConvenios = new Map();
-const RECOVERY_REDIRECT = "https://central-exames-oficial.vercel.app/";
-let tokenRecuperacao = null;
 
 const perfilAtivo = () => Boolean(perfilAtual?.ativo);
 const podeOperar = () => perfilAtivo() && ["operador", "administrador"].includes(perfilAtual?.perfil);
@@ -82,57 +79,11 @@ function renderUsuarios() {
       <div class="user-identity"><strong>${escapeHtml(usuario.nome || "Sem nome")}${proprio ? ' <span class="you-label">VOCÊ</span>' : ""}</strong><small>${escapeHtml(usuario.email || "E-mail não informado")}</small></div>
       <label class="user-field"><span>PERFIL</span><select data-user-role ${proprio ? "disabled" : ""}><option value="consulta" ${usuario.perfil === "consulta" ? "selected" : ""}>Consulta</option><option value="operador" ${usuario.perfil === "operador" ? "selected" : ""}>Operador</option><option value="administrador" ${usuario.perfil === "administrador" ? "selected" : ""}>Administrador</option></select></label>
       <label class="access-switch"><input type="checkbox" data-user-active ${usuario.ativo ? "checked" : ""} ${proprio ? "disabled" : ""}><span></span><b>${status}</b></label>
-      <div class="user-actions"><button class="primary save-user" data-save-user="${escapeHtml(usuario.usuario_id)}" ${proprio ? "disabled" : ""}>Salvar acesso</button><button class="action reset-user" data-reset-user="${escapeHtml(usuario.usuario_id)}" ${proprio ? "disabled" : ""}>Redefinir senha</button></div>
+      <div class="user-actions"><button class="primary save-user" data-save-user="${escapeHtml(usuario.usuario_id)}" ${proprio ? "disabled" : ""}>Salvar acesso</button></div>
     </article>`;
   }).join("") || '<div class="empty">Nenhum usuário cadastrado.</div>';
   document.querySelectorAll("[data-save-user]").forEach(button => button.addEventListener("click", () => salvarUsuario(button.dataset.saveUser)));
-  document.querySelectorAll("[data-reset-user]").forEach(button => button.addEventListener("click", () => abrirRedefinicaoSenha(button.dataset.resetUser)));
 }
-
-function abrirRedefinicaoSenha(usuarioId) {
-  const usuario = usuarios.find(item => String(item.usuario_id) === String(usuarioId));
-  if (!ehAdministrador() || !usuario || String(usuarioId) === String(sessao?.user?.id)) return;
-  usuarioRedefinicao = usuario;
-  $("senhaModalUsuario").textContent = `${usuario.nome || "Funcionário"} — ${usuario.email || "sem e-mail"}`;
-  $("senhaAdminNova").value = "";
-  $("senhaAdminConfirmar").value = "";
-  $("senhaAdminErro").hidden = true;
-  $("senhaModalBackdrop").hidden = false;
-  $("senhaModal").hidden = false;
-  $("senhaAdminNova").focus();
-}
-
-function fecharRedefinicaoSenha() {
-  usuarioRedefinicao = null;
-  $("senhaModalBackdrop").hidden = true;
-  $("senhaModal").hidden = true;
-}
-
-$("fecharSenhaModal").addEventListener("click", fecharRedefinicaoSenha);
-$("senhaModalBackdrop").addEventListener("click", fecharRedefinicaoSenha);
-$("formSenhaAdmin").addEventListener("submit", async event => {
-  event.preventDefault();
-  if (!usuarioRedefinicao || !ehAdministrador()) return;
-  const novaSenha = $("senhaAdminNova").value;
-  const confirmacao = $("senhaAdminConfirmar").value;
-  if (novaSenha !== confirmacao) { $("senhaAdminErro").hidden = false; $("senhaAdminErro").textContent = "As duas senhas precisam ser iguais."; return; }
-  const botao = $("salvarSenhaAdmin");
-  botao.disabled = true;
-  botao.textContent = "Redefinindo...";
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/smart-worker`, {method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${sessao.access_token}`,"Content-Type":"application/json"},body:JSON.stringify({usuario_id:usuarioRedefinicao.usuario_id,nova_senha:novaSenha})});
-  if (!response.ok) {
-    $("senhaAdminErro").hidden = false;
-    $("senhaAdminErro").textContent = "A função segura ainda não está disponível ou recusou a alteração.";
-    botao.disabled = false;
-    botao.textContent = "Redefinir senha";
-    return;
-  }
-  const nome = usuarioRedefinicao.nome || "Funcionário";
-  fecharRedefinicaoSenha();
-  mostrarToast(`Senha de ${nome} redefinida`);
-  botao.disabled = false;
-  botao.textContent = "Redefinir senha";
-});
 
 async function salvarUsuario(usuarioId) {
   if (!ehAdministrador() || String(usuarioId) === String(sessao?.user?.id)) return;
@@ -282,15 +233,15 @@ function abrirExame(id) {
   $("formExame").addEventListener("submit", async event => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const linhasLivres = String(form.get("observacao") || "").split(/\r?\n/).filter(linha => !/^\s*(COM|SEM)\s+CART[AÃ]O\s+BIO(?:FAST)?/i.test(linha));
-    const linhasPreco = [];
-    if (String(form.get("valor_biofast") || "").trim()) linhasPreco.push(`COM CARTÃO BIO ${String(form.get("valor_biofast")).trim()}`);
-    if (String(form.get("valor_sem_cartao") || "").trim()) linhasPreco.push(`SEM CARTAO BIO ${String(form.get("valor_sem_cartao")).trim()}`);
     const moedaParaNumero = valor => { const limpo = String(valor || "").trim(); return limpo ? Number(limpo.replace(/\./g, "").replace(",", ".")) : null; };
-    const dados = { tipo:form.get("tipo"), sigla:String(form.get("sigla") || "").trim().toUpperCase(), nome:String(form.get("nome") || "").trim(), codigo:String(form.get("codigo") || "").trim(), tempo_jejum:String(form.get("tempo_jejum") || "").trim(), autorizacao:form.get("autorizacao"), anexo:form.get("anexo"), termos:form.get("termos"), link_termo:String(form.get("link_termo") || "").trim(), observacao:[...linhasPreco,...linhasLivres].filter(Boolean).join("\n"), valor_cartao_biofast:moedaParaNumero(form.get("valor_biofast")), valor_sem_cartao:moedaParaNumero(form.get("valor_sem_cartao")) };
+    const dados = { tipo:form.get("tipo"), sigla:String(form.get("sigla") || "").trim().toUpperCase(), nome:String(form.get("nome") || "").trim(), codigo:String(form.get("codigo") || "").trim(), tempo_jejum:String(form.get("tempo_jejum") || "").trim(), autorizacao:form.get("autorizacao"), anexo:form.get("anexo"), termos:form.get("termos"), link_termo:normalizarUrl(form.get("link_termo")), observacao:String(form.get("observacao") || "").trim(), valor_cartao_biofast:moedaParaNumero(form.get("valor_biofast")), valor_sem_cartao:moedaParaNumero(form.get("valor_sem_cartao")) };
     const response = await fetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(e.id)}`, {method:"PATCH",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(dados)});
     if (!response.ok) { console.error(await response.text()); mostrarToast("O banco bloqueou a edição"); return; }
-    const atualizados = await response.json();
+    await response.json();
+    const confirmacao = await fetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(e.id)}&select=id,tipo,sigla,nome,codigo,autorizacao,anexo,termos,tempo_jejum,link_termo,observacao,valor_cartao_biofast,valor_sem_cartao,ativo`, {headers:apiHeaders()});
+    if (!confirmacao.ok) { mostrarToast("O exame foi salvo, mas não foi possível conferir"); return; }
+    const atualizados = await confirmacao.json();
+    if (!atualizados[0] || String(atualizados[0].observacao || "") !== dados.observacao) { mostrarToast("A observação não foi confirmada pelo banco"); return; }
     const index = exames.findIndex(item => String(item.id) === String(e.id));
     exames[index] = atualizados[0] || {...e,...dados};
     renderExames(); abrirExame(e.id); mostrarToast("Exame atualizado");
@@ -647,7 +598,6 @@ function alternarTelaAcesso(cadastro) {
   $("formLogin").hidden = cadastro;
   $("formCadastro").hidden = !cadastro;
   $("formRecuperar").hidden = true;
-  $("formNovaSenha").hidden = true;
   $("loginErro").hidden = true;
   $("cadastroErro").hidden = true;
   document.querySelector(".login-card h1").textContent = cadastro ? "Crie seu acesso." : "Entre para continuar.";
@@ -658,21 +608,9 @@ function mostrarRecuperacaoSenha() {
   $("formLogin").hidden = true;
   $("formCadastro").hidden = true;
   $("formRecuperar").hidden = false;
-  $("formNovaSenha").hidden = true;
   $("recuperarErro").hidden = true;
   document.querySelector(".login-card h1").textContent = "Recupere sua senha.";
-  document.querySelector(".login-card > p").textContent = "Enviaremos um link seguro para o e-mail cadastrado.";
-}
-
-function mostrarNovaSenha() {
-  $("formLogin").hidden = true;
-  $("formCadastro").hidden = true;
-  $("formRecuperar").hidden = true;
-  $("formNovaSenha").hidden = false;
-  $("novaSenhaErro").hidden = true;
-  $("loginGate").classList.remove("hidden");
-  document.querySelector(".login-card h1").textContent = "Crie uma nova senha.";
-  document.querySelector(".login-card > p").textContent = "Use pelo menos 8 caracteres e não compartilhe sua senha.";
+  document.querySelector(".login-card > p").textContent = "Informe seu e-mail, o código especial da empresa e escolha sua nova senha.";
 }
 
 $("mostrarCadastro").addEventListener("click", () => alternarTelaAcesso(true));
@@ -683,48 +621,28 @@ document.querySelectorAll(".voltar-login").forEach(button => button.addEventList
 $("formRecuperar").addEventListener("submit", async event => {
   event.preventDefault();
   const email = $("recuperarEmail").value.trim();
+  const codigo = $("recuperarCodigo").value.trim();
+  const novaSenha = $("recuperarNovaSenha").value;
+  const confirmacao = $("recuperarConfirmarSenha").value;
+  if (novaSenha !== confirmacao) { $("recuperarErro").hidden = false; $("recuperarErro").textContent = "As duas senhas precisam ser iguais."; return; }
   $("btnRecuperar").disabled = true;
-  $("btnRecuperar").textContent = "Enviando...";
+  $("btnRecuperar").textContent = "Trocando...";
   $("recuperarErro").hidden = true;
   try {
-    const response = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,redirect_to:RECOVERY_REDIRECT})});
-    if (!response.ok) throw new Error("Não foi possível enviar o e-mail agora.");
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/smart-worker`, {method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({acao:"recuperar_senha",email,codigo_recuperacao:codigo,nova_senha:novaSenha})});
+    if (!response.ok) throw new Error("E-mail ou código especial inválido. Confira e tente novamente.");
     alternarTelaAcesso(false);
     $("loginErro").hidden = false;
     $("loginErro").classList.add("success-message");
-    $("loginErro").textContent = "Se o e-mail estiver cadastrado, o link de recuperação será enviado.";
+    $("loginErro").textContent = "Senha alterada. Agora você já pode entrar com a nova senha.";
+    event.currentTarget.reset();
   } catch (error) {
     $("recuperarErro").hidden = false;
     $("recuperarErro").textContent = error.message;
   } finally {
     $("btnRecuperar").disabled = false;
-    $("btnRecuperar").textContent = "Enviar link de recuperação";
+    $("btnRecuperar").textContent = "Trocar minha senha";
   }
-});
-
-$("formNovaSenha").addEventListener("submit", async event => {
-  event.preventDefault();
-  const password = $("novaSenha").value;
-  const confirmacao = $("confirmarNovaSenha").value;
-  if (password !== confirmacao) { $("novaSenhaErro").hidden = false; $("novaSenhaErro").textContent = "As duas senhas precisam ser iguais."; return; }
-  $("btnNovaSenha").disabled = true;
-  $("btnNovaSenha").textContent = "Salvando...";
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${tokenRecuperacao}`,"Content-Type":"application/json"},body:JSON.stringify({password})});
-  if (!response.ok) {
-    $("novaSenhaErro").hidden = false;
-    $("novaSenhaErro").textContent = "O link expirou ou a senha não pôde ser alterada.";
-    $("btnNovaSenha").disabled = false;
-    $("btnNovaSenha").textContent = "Salvar nova senha";
-    return;
-  }
-  tokenRecuperacao = null;
-  history.replaceState(null, "", location.pathname);
-  alternarTelaAcesso(false);
-  $("loginErro").hidden = false;
-  $("loginErro").classList.add("success-message");
-  $("loginErro").textContent = "Senha alterada. Agora você já pode entrar.";
-  $("btnNovaSenha").disabled = false;
-  $("btnNovaSenha").textContent = "Salvar nova senha";
 });
 
 $("formCadastro").addEventListener("submit", async event => {
@@ -843,14 +761,6 @@ async function iniciar() {
 }
 
 (async function iniciarAplicacao() {
-  const parametrosRecuperacao = new URLSearchParams(location.hash.replace(/^#/, ""));
-  if (parametrosRecuperacao.get("type") === "recovery" && parametrosRecuperacao.get("access_token")) {
-    tokenRecuperacao = parametrosRecuperacao.get("access_token");
-    sessao = null;
-    apagarSessao();
-    mostrarNovaSenha();
-    return;
-  }
   if (!sessaoValida()) {
     sessao = null;
     apagarSessao();
