@@ -18,7 +18,7 @@
         <label><span>SENHA</span><input id="loginSenha" type="password" autocomplete="current-password" placeholder="Sua senha" required></label>
         <div class="login-error" id="loginErro" hidden></div>
         <button class="primary" id="btnEntrar" type="submit">Entrar no sistema</button>
-        <button class="login-secondary" id="mostrarRecuperacao" type="button">Esqueci minha senha</button>
+        <button class="login-secondary" id="mostrarRecuperacao" type="button" hidden>Esqueci minha senha</button>
         <button class="login-secondary" id="mostrarCadastro" type="button">Criar meu acesso</button>
       </form>
       <form id="formCadastro" class="login-form" hidden>
@@ -152,6 +152,19 @@
     <button class="drawer-close" id="fecharDrawer" aria-label="Fechar">×</button>
     <div id="drawerContent"></div>
   </aside>
+  <div class="admin-modal-backdrop" id="senhaModalBackdrop" hidden></div>
+  <section class="admin-modal" id="senhaModal" hidden aria-modal="true" role="dialog" aria-labelledby="senhaModalTitulo">
+    <button class="drawer-close" id="fecharSenhaModal" type="button" aria-label="Fechar">×</button>
+    <span class="eyebrow">ADMINISTRAÇÃO SEGURA</span>
+    <h2 id="senhaModalTitulo">Redefinir senha</h2>
+    <p id="senhaModalUsuario">Defina uma senha temporária para o funcionário.</p>
+    <form class="login-form" id="formSenhaAdmin">
+      <label><span>NOVA SENHA TEMPORÁRIA</span><input id="senhaAdminNova" type="password" minlength="8" autocomplete="new-password" required></label>
+      <label><span>CONFIRMAR SENHA</span><input id="senhaAdminConfirmar" type="password" minlength="8" autocomplete="new-password" required></label>
+      <div class="login-error" id="senhaAdminErro" hidden></div>
+      <button class="primary" id="salvarSenhaAdmin" type="submit">Redefinir senha</button>
+    </form>
+  </section>
   <div class="toast" id="toast"></div>
   <button class="back-to-top" id="voltarTopo" aria-label="Voltar ao topo" title="Voltar ao topo">↑</button>
   <script src="app.js"></script>

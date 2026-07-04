@@ -15,6 +15,7 @@ let somenteFavoritos = false;
 let perfilAtual = null;
 let usuarios = [];
 let acessosCredenciais = [];
+let usuarioRedefinicao = null;
 const credenciaisConvenios = new Map();
 const RECOVERY_REDIRECT = "https://central-exames-oficial.vercel.app/";
 let tokenRecuperacao = null;
@@ -76,11 +77,57 @@ function renderUsuarios() {
       <div class="user-identity"><strong>${escapeHtml(usuario.nome || "Sem nome")}${proprio ? ' <span class="you-label">VOCÊ</span>' : ""}</strong><small>${escapeHtml(usuario.email || "E-mail não informado")}</small></div>
       <label class="user-field"><span>PERFIL</span><select data-user-role ${proprio ? "disabled" : ""}><option value="consulta" ${usuario.perfil === "consulta" ? "selected" : ""}>Consulta</option><option value="operador" ${usuario.perfil === "operador" ? "selected" : ""}>Operador</option><option value="administrador" ${usuario.perfil === "administrador" ? "selected" : ""}>Administrador</option></select></label>
       <label class="access-switch"><input type="checkbox" data-user-active ${usuario.ativo ? "checked" : ""} ${proprio ? "disabled" : ""}><span></span><b>${status}</b></label>
-      <button class="primary save-user" data-save-user="${escapeHtml(usuario.usuario_id)}" ${proprio ? "disabled" : ""}>Salvar acesso</button>
+      <div class="user-actions"><button class="primary save-user" data-save-user="${escapeHtml(usuario.usuario_id)}" ${proprio ? "disabled" : ""}>Salvar acesso</button><button class="action reset-user" data-reset-user="${escapeHtml(usuario.usuario_id)}" ${proprio ? "disabled" : ""}>Redefinir senha</button></div>
     </article>`;
   }).join("") || '<div class="empty">Nenhum usuário cadastrado.</div>';
   document.querySelectorAll("[data-save-user]").forEach(button => button.addEventListener("click", () => salvarUsuario(button.dataset.saveUser)));
+  document.querySelectorAll("[data-reset-user]").forEach(button => button.addEventListener("click", () => abrirRedefinicaoSenha(button.dataset.resetUser)));
 }
+
+function abrirRedefinicaoSenha(usuarioId) {
+  const usuario = usuarios.find(item => String(item.usuario_id) === String(usuarioId));
+  if (!ehAdministrador() || !usuario || String(usuarioId) === String(sessao?.user?.id)) return;
+  usuarioRedefinicao = usuario;
+  $("senhaModalUsuario").textContent = `${usuario.nome || "Funcionário"} — ${usuario.email || "sem e-mail"}`;
+  $("senhaAdminNova").value = "";
+  $("senhaAdminConfirmar").value = "";
+  $("senhaAdminErro").hidden = true;
+  $("senhaModalBackdrop").hidden = false;
+  $("senhaModal").hidden = false;
+  $("senhaAdminNova").focus();
+}
+
+function fecharRedefinicaoSenha() {
+  usuarioRedefinicao = null;
+  $("senhaModalBackdrop").hidden = true;
+  $("senhaModal").hidden = true;
+}
+
+$("fecharSenhaModal").addEventListener("click", fecharRedefinicaoSenha);
+$("senhaModalBackdrop").addEventListener("click", fecharRedefinicaoSenha);
+$("formSenhaAdmin").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!usuarioRedefinicao || !ehAdministrador()) return;
+  const novaSenha = $("senhaAdminNova").value;
+  const confirmacao = $("senhaAdminConfirmar").value;
+  if (novaSenha !== confirmacao) { $("senhaAdminErro").hidden = false; $("senhaAdminErro").textContent = "As duas senhas precisam ser iguais."; return; }
+  const botao = $("salvarSenhaAdmin");
+  botao.disabled = true;
+  botao.textContent = "Redefinindo...";
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/smart-worker`, {method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${sessao.access_token}`,"Content-Type":"application/json"},body:JSON.stringify({usuario_id:usuarioRedefinicao.usuario_id,nova_senha:novaSenha})});
+  if (!response.ok) {
+    $("senhaAdminErro").hidden = false;
+    $("senhaAdminErro").textContent = "A função segura ainda não está disponível ou recusou a alteração.";
+    botao.disabled = false;
+    botao.textContent = "Redefinir senha";
+    return;
+  }
+  const nome = usuarioRedefinicao.nome || "Funcionário";
+  fecharRedefinicaoSenha();
+  mostrarToast(`Senha de ${nome} redefinida`);
+  botao.disabled = false;
+  botao.textContent = "Redefinir senha";
+});
 
 async function salvarUsuario(usuarioId) {
   if (!ehAdministrador() || String(usuarioId) === String(sessao?.user?.id)) return;
