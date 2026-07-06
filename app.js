@@ -19,6 +19,7 @@ const credenciaisConvenios = new Map();
 
 const perfilAtivo = () => Boolean(perfilAtual?.ativo);
 const podeOperar = () => perfilAtivo() && ["operador", "administrador"].includes(perfilAtual?.perfil);
+const podeConsultarConvenios = () => perfilAtivo() && ["consulta", "operador", "administrador"].includes(perfilAtual?.perfil);
 const ehAdministrador = () => perfilAtivo() && perfilAtual?.perfil === "administrador";
 
 const $ = (id) => document.getElementById(id);
@@ -52,7 +53,7 @@ function aplicarPerfilNaTela() {
   const operacao = podeOperar();
   document.querySelectorAll(".operation-only").forEach(elemento => { elemento.hidden = !operacao; });
   document.querySelectorAll(".admin-only").forEach(elemento => { elemento.hidden = !ehAdministrador(); });
-  $("tabConvenios").hidden = !operacao;
+  $("tabConvenios").hidden = !podeConsultarConvenios();
   $("perfilLogado").hidden = false;
   $("perfilLogado").textContent = perfilAtual.perfil === "administrador" ? "Administrador" : perfilAtual.perfil === "operador" ? "Operador" : "Consulta";
 }
@@ -441,7 +442,7 @@ function abrirConvenio(id) {
   const camposCredenciais = credencial ? `
         <label class="field"><span>USUÁRIO PROTEGIDO</span><input name="usuario_seguro" value="${escapeHtml(credencial.usuario || "")}"></label>
         <label class="field"><span>SENHA PROTEGIDA</span><input name="senha_segura" value="${escapeHtml(credencial.senha || "")}"></label>` : '<div class="secure-edit-note wide">Desbloqueie as credenciais antes de alterar usuário ou senha.</div>';
-  $("detalheConvenio").innerHTML = `<div class="convenio-title"><div><span class="eyebrow blue">CONVÊNIO</span><h2>${escapeHtml(c.nome)}</h2><p>${escapeHtml(c.categoria || "")}</p></div><div class="title-actions"><span class="badge ${String(c.ativo) === "true" ? "green" : "red"}">${String(c.ativo) === "true" ? "Ativo" : "Inativo"}</span><button class="action" id="editarConvenio">Editar informações</button>${ehAdministrador() ? `<button class="action status-action" id="statusConvenio">${c.ativo === false ? "Reativar" : "Desativar"}</button><button class="action danger-action" id="excluirConvenio">Excluir</button>` : ""}</div></div>
+  $("detalheConvenio").innerHTML = `<div class="convenio-title"><div><span class="eyebrow blue">CONVÊNIO</span><h2>${escapeHtml(c.nome)}</h2><p>${escapeHtml(c.categoria || "")}</p></div><div class="title-actions"><span class="badge ${String(c.ativo) === "true" ? "green" : "red"}">${String(c.ativo) === "true" ? "Ativo" : "Inativo"}</span>${podeOperar() ? '<button class="action" id="editarConvenio">Editar informações</button>' : ""}${ehAdministrador() ? `<button class="action status-action" id="statusConvenio">${c.ativo === false ? "Reativar" : "Desativar"}</button><button class="action danger-action" id="excluirConvenio">Excluir</button>` : ""}</div></div>
     <div class="portal-box"><h3>Portal principal</h3><p>Acesse diretamente o ambiente do convênio.</p>${c.site ? `<a href="${escapeHtml(c.site)}" target="_blank" rel="noopener">Abrir portal ↗</a>` : "Sem portal cadastrado"}</div>
     ${credenciaisHtml}
     <div class="credential"><div><small>TELEFONE</small><strong>${escapeHtml(c.telefone || "Não informado")}</strong></div><button data-copy="${escapeHtml(c.telefone || "")}">Copiar</button></div>
@@ -466,6 +467,7 @@ function abrirConvenio(id) {
     $("carregarCredencial").addEventListener("click", () => carregarCredencialConvenio(c.id));
   }
   document.querySelectorAll("[data-copy]").forEach(button => button.addEventListener("click", async () => { await navigator.clipboard.writeText(button.dataset.copy); mostrarToast("Copiado"); }));
+  if (podeOperar()) {
   $("editarConvenio").addEventListener("click", () => { $("formConvenio").hidden = false; $("formConvenio").scrollIntoView({behavior:"smooth", block:"start"}); });
   if (ehAdministrador()) {
     $("statusConvenio").addEventListener("click", () => alterarStatusConvenio(c.id, c.ativo === false));
@@ -490,6 +492,7 @@ function abrirConvenio(id) {
     convenios[index] = atualizados[0] || {...c,...dados};
     renderConvenios(); abrirConvenio(c.id); mostrarToast("Convênio atualizado");
   });
+  }
 }
 
 async function alterarStatusConvenio(id, ativo) {
@@ -746,7 +749,7 @@ async function iniciar() {
   try {
     [exames, convenios] = await Promise.all([
       carregarExames(),
-      podeOperar() ? buscarTabela("convenios", "id,nome,categoria,site,telefone,observacao,ativo,links_extras") : Promise.resolve([])
+      podeConsultarConvenios() ? buscarTabela("convenios", "id,nome,categoria,site,telefone,observacao,ativo,links_extras") : Promise.resolve([])
     ]);
     await carregarFavoritos();
     exames.sort((a,b) => String(a.sigla).localeCompare(String(b.sigla), "pt-BR"));
