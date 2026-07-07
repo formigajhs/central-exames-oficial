@@ -56,6 +56,17 @@
   </header>
 
   <main>
+    <section class="notice-center" id="centralAvisos" hidden>
+      <div class="notice-shell">
+        <div class="notice-label"><span>!</span><small>AVISOS</small></div>
+        <div class="notice-track" id="faixaAvisos"></div>
+        <div class="notice-controls">
+          <button class="notice-nav" id="avisoAnterior" type="button" aria-label="Aviso anterior">‹</button>
+          <button class="notice-nav" id="avisoProximo" type="button" aria-label="Próximo aviso">›</button>
+          <button class="notice-manage admin-only" id="gerenciarAvisos" type="button">Gerenciar</button>
+        </div>
+      </div>
+    </section>
     <section id="view-exames" class="view active">
       <div class="hero">
         <div>
@@ -150,6 +161,24 @@
     <div id="drawerContent"></div>
   </aside>
   <div class="toast" id="toast"></div>
+  <div class="admin-modal-backdrop" id="avisosBackdrop" hidden></div>
+  <section class="admin-modal notices-modal" id="avisosModal" hidden>
+    <button class="drawer-close small-close" id="fecharAvisos" type="button" aria-label="Fechar">×</button>
+    <span class="eyebrow">COMUNICAÇÃO INTERNA</span>
+    <h2>Gerenciar avisos</h2>
+    <p>Cadastre comunicados rápidos para orientar a equipe sobre convênios, instabilidades e mudanças do dia.</p>
+    <form class="edit-form notice-form" id="formAviso">
+      <input type="hidden" id="avisoId">
+      <label class="field wide"><span>TÍTULO</span><input id="avisoTitulo" placeholder="Ex: Convênio GEAP fora do ar" required></label>
+      <label class="field wide"><span>MENSAGEM</span><textarea id="avisoMensagem" placeholder="Escreva a orientação rápida para a equipe" required></textarea></label>
+      <div class="form-grid">
+        <label class="field"><span>TIPO</span><select id="avisoTipo"><option value="info">Informativo</option><option value="alerta">Atenção</option><option value="urgente">Urgente</option><option value="sucesso">Resolvido</option></select></label>
+        <label class="field"><span>STATUS</span><select id="avisoAtivo"><option value="true">Ativo</option><option value="false">Inativo</option></select></label>
+      </div>
+      <div class="form-actions"><button class="primary" type="submit" id="salvarAviso">Salvar aviso</button><button class="action" type="button" id="limparAviso">Novo aviso</button></div>
+    </form>
+    <div class="notice-admin-list" id="listaAvisosAdmin"></div>
+  </section>
   <button class="back-to-top" id="voltarTopo" aria-label="Voltar ao topo" title="Voltar ao topo">↑</button>
   <script src="app.js"></script>
 </body>

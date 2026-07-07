@@ -16,6 +16,11 @@ let perfilAtual = null;
 let usuarios = [];
 let acessosCredenciais = [];
 const credenciaisConvenios = new Map();
+let avisosInternos = [];
+let avisoAtual = 0;
+let temporizadorAvisos = null;
+let avisosUsamBanco = false;
+const AVISOS_STORAGE_KEY = "central_operacional_avisos_preview";
 
 const perfilAtivo = () => Boolean(perfilAtual?.ativo);
 const podeOperar = () => perfilAtivo() && ["operador", "administrador"].includes(perfilAtual?.perfil);
@@ -56,6 +61,156 @@ function aplicarPerfilNaTela() {
   $("tabConvenios").hidden = !podeConsultarConvenios();
   $("perfilLogado").hidden = false;
   $("perfilLogado").textContent = perfilAtual.perfil === "administrador" ? "Administrador" : perfilAtual.perfil === "operador" ? "Operador" : "Consulta";
+  renderAvisos();
+}
+
+function carregarAvisosLocais() {
+  try {
+    const salvos = JSON.parse(globalThis.localStorage?.getItem(AVISOS_STORAGE_KEY) || "null");
+    if (Array.isArray(salvos)) {
+      avisosInternos = salvos;
+      return;
+    }
+  } catch (_) {}
+  avisosInternos = [];
+}
+
+function salvarAvisosLocais() {
+  try { globalThis.localStorage?.setItem(AVISOS_STORAGE_KEY, JSON.stringify(avisosInternos)); } catch (_) {}
+}
+
+async function carregarAvisosDoBanco() {
+  const select = "id,titulo,mensagem,tipo,ativo,prioridade,criado_em,atualizado_em";
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/avisos_internos?select=${encodeURIComponent(select)}&order=prioridade.desc,criado_em.desc`, { headers: apiHeaders() });
+  if (!response.ok) throw new Error(await response.text());
+  avisosInternos = await response.json();
+  avisosUsamBanco = true;
+  avisoAtual = 0;
+  renderAvisos();
+}
+
+async function salvarAvisoOficial(aviso) {
+  if (!avisosUsamBanco) {
+    const existe = avisosInternos.some(item => String(item.id) === String(aviso.id));
+    avisosInternos = existe ? avisosInternos.map(item => String(item.id) === String(aviso.id) ? aviso : item) : [aviso, ...avisosInternos];
+    salvarAvisosLocais();
+    return aviso;
+  }
+  const editando = avisosInternos.some(item => String(item.id) === String(aviso.id));
+  const corpo = { titulo: aviso.titulo, mensagem: aviso.mensagem, tipo: aviso.tipo, ativo: aviso.ativo, prioridade: aviso.prioridade || 0 };
+  const url = editando
+    ? `${SUPABASE_URL}/rest/v1/avisos_internos?id=eq.${encodeURIComponent(aviso.id)}`
+    : `${SUPABASE_URL}/rest/v1/avisos_internos`;
+  const response = await fetch(url, {
+    method: editando ? "PATCH" : "POST",
+    headers: {...apiHeaders(), "Content-Type":"application/json", "Prefer":"return=representation"},
+    body: JSON.stringify(corpo)
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return (await response.json())[0];
+}
+
+async function excluirAvisoOficial(id) {
+  if (!avisosUsamBanco) {
+    avisosInternos = avisosInternos.filter(item => String(item.id) !== String(id));
+    salvarAvisosLocais();
+    return;
+  }
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/avisos_internos?id=eq.${encodeURIComponent(id)}`, { method:"DELETE", headers:apiHeaders() });
+  if (!response.ok) throw new Error(await response.text());
+}
+
+function avisosAtivos() {
+  return avisosInternos.filter(aviso => aviso.ativo);
+}
+
+function renderAvisos() {
+  const container = $("centralAvisos");
+  if (!container) return;
+  const ativos = avisosAtivos();
+  container.hidden = ativos.length === 0 && !ehAdministrador();
+  if (ativos.length === 0) {
+    $("faixaAvisos").innerHTML = `<article class="notice-item info"><strong>Nenhum aviso ativo</strong><p>Use Gerenciar para cadastrar um comunicado interno.</p></article>`;
+  } else {
+    if (avisoAtual >= ativos.length) avisoAtual = 0;
+    const aviso = ativos[avisoAtual];
+    $("faixaAvisos").innerHTML = `<article class="notice-item ${escapeHtml(aviso.tipo || "info")}"><strong>${escapeHtml(aviso.titulo)}</strong><p>${escapeHtml(aviso.mensagem)}</p><span>${avisoAtual + 1}/${ativos.length}</span></article>`;
+  }
+  $("avisoAnterior").disabled = ativos.length <= 1;
+  $("avisoProximo").disabled = ativos.length <= 1;
+  renderAvisosAdmin();
+  clearInterval(temporizadorAvisos);
+  if (ativos.length > 1) {
+    temporizadorAvisos = setInterval(() => mudarAviso(1), 6500);
+  }
+}
+
+function mudarAviso(direcao) {
+  const ativos = avisosAtivos();
+  if (ativos.length <= 1) return;
+  avisoAtual = (avisoAtual + direcao + ativos.length) % ativos.length;
+  renderAvisos();
+}
+
+function abrirGerenciadorAvisos() {
+  if (!ehAdministrador()) return;
+  $("avisosBackdrop").hidden = false;
+  $("avisosModal").hidden = false;
+  limparFormularioAviso();
+  renderAvisosAdmin();
+}
+
+function fecharGerenciadorAvisos() {
+  $("avisosBackdrop").hidden = true;
+  $("avisosModal").hidden = true;
+}
+
+function limparFormularioAviso() {
+  $("avisoId").value = "";
+  $("avisoTitulo").value = "";
+  $("avisoMensagem").value = "";
+  $("avisoTipo").value = "info";
+  $("avisoAtivo").value = "true";
+  $("salvarAviso").textContent = "Salvar aviso";
+}
+
+function editarAviso(id) {
+  const aviso = avisosInternos.find(item => String(item.id) === String(id));
+  if (!aviso) return;
+  $("avisoId").value = aviso.id;
+  $("avisoTitulo").value = aviso.titulo || "";
+  $("avisoMensagem").value = aviso.mensagem || "";
+  $("avisoTipo").value = aviso.tipo || "info";
+  $("avisoAtivo").value = aviso.ativo ? "true" : "false";
+  $("salvarAviso").textContent = "Atualizar aviso";
+  $("avisoTitulo").focus();
+}
+
+async function excluirAviso(id) {
+  const aviso = avisosInternos.find(item => String(item.id) === String(id));
+  if (!aviso || !confirm(`Excluir o aviso "${aviso.titulo}"?`)) return;
+  try {
+    await excluirAvisoOficial(id);
+    avisosInternos = avisosInternos.filter(item => String(item.id) !== String(id));
+  } catch (error) {
+    console.error(error);
+    mostrarToast("NÃ£o foi possÃ­vel excluir o aviso");
+    return;
+  }
+  avisoAtual = 0;
+  renderAvisos();
+  mostrarToast("Aviso excluído");
+}
+
+function renderAvisosAdmin() {
+  const lista = $("listaAvisosAdmin");
+  if (!lista) return;
+  lista.innerHTML = avisosInternos.length ? avisosInternos.map(aviso => `<article class="notice-admin-row ${aviso.ativo ? "" : "inactive-record"}">
+    <div><span class="notice-pill ${escapeHtml(aviso.tipo || "info")}">${escapeHtml(aviso.tipo || "info")}</span><strong>${escapeHtml(aviso.titulo)}</strong><p>${escapeHtml(aviso.mensagem)}</p></div>
+    <div class="notice-admin-actions"><button class="action" type="button" data-edit-aviso="${escapeHtml(aviso.id)}">Editar</button><button class="action danger-action" type="button" data-delete-aviso="${escapeHtml(aviso.id)}">Excluir</button></div>
+  </article>`).join("") : '<div class="empty">Nenhum aviso cadastrado ainda.</div>';
+  document.querySelectorAll("[data-edit-aviso]").forEach(button => button.addEventListener("click", () => editarAviso(button.dataset.editAviso)));
+  document.querySelectorAll("[data-delete-aviso]").forEach(button => button.addEventListener("click", () => excluirAviso(button.dataset.deleteAviso)));
 }
 
 async function carregarUsuarios() {
@@ -520,6 +675,43 @@ async function excluirConvenio(id) {
 
 function mostrarToast(texto) { $("toast").textContent = texto; $("toast").classList.add("show"); setTimeout(() => $("toast").classList.remove("show"), 1800); }
 
+carregarAvisosLocais();
+$("avisoAnterior").addEventListener("click", () => mudarAviso(-1));
+$("avisoProximo").addEventListener("click", () => mudarAviso(1));
+$("gerenciarAvisos").addEventListener("click", abrirGerenciadorAvisos);
+$("fecharAvisos").addEventListener("click", fecharGerenciadorAvisos);
+$("avisosBackdrop").addEventListener("click", fecharGerenciadorAvisos);
+$("limparAviso").addEventListener("click", limparFormularioAviso);
+$("formAviso").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!ehAdministrador()) return;
+  const id = $("avisoId").value || (crypto.randomUUID?.() || String(Date.now()));
+  const existe = avisosInternos.some(item => String(item.id) === String(id));
+  const aviso = {
+    id,
+    titulo: $("avisoTitulo").value.trim(),
+    mensagem: $("avisoMensagem").value.trim(),
+    tipo: $("avisoTipo").value,
+    ativo: $("avisoAtivo").value === "true",
+    prioridade: $("avisoTipo").value === "urgente" ? 3 : $("avisoTipo").value === "alerta" ? 2 : $("avisoTipo").value === "sucesso" ? 1 : 0
+  };
+  if (!aviso.titulo || !aviso.mensagem) return;
+  $("salvarAviso").disabled = true;
+  try {
+    const salvo = await salvarAvisoOficial(aviso);
+    avisosInternos = existe ? avisosInternos.map(item => String(item.id) === String(id) ? salvo : item) : [salvo, ...avisosInternos];
+    avisoAtual = 0;
+    limparFormularioAviso();
+    renderAvisos();
+    mostrarToast(existe ? "Aviso atualizado" : "Aviso cadastrado");
+  } catch (error) {
+    console.error(error);
+    mostrarToast("NÃ£o foi possÃ­vel salvar o aviso");
+  } finally {
+    $("salvarAviso").disabled = false;
+  }
+});
+
 document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
   document.querySelectorAll(".tab,.view").forEach(el => el.classList.remove("active"));
   tab.classList.add("active"); $("view-" + tab.dataset.view).classList.add("active");
@@ -756,6 +948,13 @@ async function iniciar() {
     convenios.sort((a,b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"));
     $("loadingExames").textContent = `${exames.length} registros`;
     renderExames(); renderConvenios();
+    try {
+      await carregarAvisosDoBanco();
+    } catch (error) {
+      console.info("Avisos oficiais ainda nÃ£o configurados; usando prÃ©via local.", error);
+      avisosUsamBanco = false;
+      renderAvisos();
+    }
     await carregarUsuarios();
     await carregarAuditoria();
   } catch (error) {
