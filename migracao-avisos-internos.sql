@@ -19,6 +19,8 @@ create table if not exists public.avisos_internos (
 
 alter table public.avisos_internos enable row level security;
 
+grant select, insert, update, delete on table public.avisos_internos to authenticated;
+
 drop policy if exists avisos_internos_consultar on public.avisos_internos;
 create policy avisos_internos_consultar on public.avisos_internos
 for select to authenticated
