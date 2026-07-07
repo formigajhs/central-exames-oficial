@@ -134,7 +134,8 @@ function renderAvisos() {
   } else {
     if (avisoAtual >= ativos.length) avisoAtual = 0;
     const aviso = ativos[avisoAtual];
-    $("faixaAvisos").innerHTML = `<article class="notice-item ${escapeHtml(aviso.tipo || "info")}"><strong>${escapeHtml(aviso.titulo)}</strong><p>${escapeHtml(aviso.mensagem)}</p><span>${avisoAtual + 1}/${ativos.length}</span></article>`;
+    $("faixaAvisos").innerHTML = `<button class="notice-item ${escapeHtml(aviso.tipo || "info")}" type="button" data-open-aviso="${escapeHtml(aviso.id)}"><strong>${escapeHtml(aviso.titulo)}</strong><p>${escapeHtml(aviso.mensagem)}</p><span>Ler tudo · ${avisoAtual + 1}/${ativos.length}</span></button>`;
+    document.querySelectorAll("[data-open-aviso]").forEach(button => button.addEventListener("click", () => abrirDetalheAviso(button.dataset.openAviso)));
   }
   $("avisoAnterior").disabled = ativos.length <= 1;
   $("avisoProximo").disabled = ativos.length <= 1;
@@ -163,6 +164,22 @@ function abrirGerenciadorAvisos() {
 function fecharGerenciadorAvisos() {
   $("avisosBackdrop").hidden = true;
   $("avisosModal").hidden = true;
+}
+
+function abrirDetalheAviso(id) {
+  const aviso = avisosInternos.find(item => String(item.id) === String(id));
+  if (!aviso) return;
+  $("avisoDetalheTipo").className = `notice-pill ${escapeHtml(aviso.tipo || "info")}`;
+  $("avisoDetalheTipo").textContent = aviso.tipo === "urgente" ? "URGENTE" : aviso.tipo === "alerta" ? "ATENÇÃO" : aviso.tipo === "sucesso" ? "RESOLVIDO" : "INFORMATIVO";
+  $("avisoDetalheTitulo").textContent = aviso.titulo || "Aviso";
+  $("avisoDetalheMensagem").textContent = aviso.mensagem || "";
+  $("avisoDetalheBackdrop").hidden = false;
+  $("avisoDetalheModal").hidden = false;
+}
+
+function fecharDetalheAviso() {
+  $("avisoDetalheBackdrop").hidden = true;
+  $("avisoDetalheModal").hidden = true;
 }
 
 function limparFormularioAviso() {
@@ -681,6 +698,8 @@ $("avisoProximo").addEventListener("click", () => mudarAviso(1));
 $("gerenciarAvisos").addEventListener("click", abrirGerenciadorAvisos);
 $("fecharAvisos").addEventListener("click", fecharGerenciadorAvisos);
 $("avisosBackdrop").addEventListener("click", fecharGerenciadorAvisos);
+$("fecharDetalheAviso").addEventListener("click", fecharDetalheAviso);
+$("avisoDetalheBackdrop").addEventListener("click", fecharDetalheAviso);
 $("limparAviso").addEventListener("click", limparFormularioAviso);
 $("formAviso").addEventListener("submit", async event => {
   event.preventDefault();
