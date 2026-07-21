@@ -5,6 +5,70 @@ const guardarSessao = valor => { try { globalThis.localStorage?.setItem("central
 const apagarSessao = () => { try { globalThis.localStorage?.removeItem("central_operacional_sessao"); } catch (_) {} };
 let sessao = lerSessao();
 const apiHeaders = () => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${sessao?.access_token || SUPABASE_KEY}` });
+let temporizadorSessao = null;
+
+function sessaoValida() {
+  if (!sessao?.access_token) return false;
+  if (!sessao.expires_at) return true;
+  return Number(sessao.expires_at) > Math.floor(Date.now() / 1000) + 30;
+}
+
+async function renovarSessaoSePreciso(forcar = false) {
+  if (!sessao?.access_token) return false;
+  if (!forcar && sessaoValida()) return true;
+  if (!sessao.refresh_token) return false;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: sessao.refresh_token })
+    });
+    if (!response.ok) return false;
+    const data = await response.json();
+    sessao = {
+      ...sessao,
+      ...data,
+      user: data.user || sessao.user,
+      refresh_token: data.refresh_token || sessao.refresh_token,
+      expires_at: Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600)
+    };
+    guardarSessao(sessao);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function garantirSessaoAtiva() {
+  if (await renovarSessaoSePreciso(false)) return true;
+  sessao = null;
+  perfilAtual = null;
+  apagarSessao();
+  mostrarLogin("Sua sessao expirou. Entre novamente para salvar com seguranca.");
+  throw new Error("Sessao expirada.");
+}
+
+async function apiFetch(url, options = {}, exigirLogin = true) {
+  if (exigirLogin) await garantirSessaoAtiva();
+  const montarOpcoes = () => ({
+    ...options,
+    headers: { ...apiHeaders(), ...(options.headers || {}) }
+  });
+  let response = await fetch(url, montarOpcoes());
+  if (exigirLogin && (response.status === 401 || response.status === 403) && await renovarSessaoSePreciso(true)) {
+    response = await fetch(url, montarOpcoes());
+  }
+  return response;
+}
+
+function iniciarRenovacaoSessao() {
+  if (temporizadorSessao) clearInterval(temporizadorSessao);
+  temporizadorSessao = setInterval(() => renovarSessaoSePreciso(false), 5 * 60 * 1000);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) renovarSessaoSePreciso(false);
+});
 
 let exames = [];
 let convenios = [];
@@ -37,7 +101,7 @@ const normalizarUrl = (value = "") => {
 };
 
 async function buscarTabela(tabela, select = "*") {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}?select=${encodeURIComponent(select)}`, { headers: apiHeaders() });
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/${tabela}?select=${encodeURIComponent(select)}`);
   if (!response.ok) throw new Error(await response.text());
   return response.json();
 }
@@ -45,7 +109,7 @@ async function buscarTabela(tabela, select = "*") {
 async function carregarPerfil() {
   if (!sessao?.user?.id) throw new Error("Sessão inválida. Entre novamente.");
   const url = `${SUPABASE_URL}/rest/v1/perfis_usuarios?select=usuario_id,nome,perfil,ativo&usuario_id=eq.${encodeURIComponent(sessao.user.id)}&limit=1`;
-  const response = await fetch(url, { headers: apiHeaders() });
+  const response = await apiFetch(url);
   if (!response.ok) throw new Error("Não foi possível verificar seu perfil de acesso.");
   const registros = await response.json();
   perfilAtual = registros[0] || null;
@@ -81,7 +145,7 @@ function salvarAvisosLocais() {
 
 async function carregarAvisosDoBanco() {
   const select = "id,titulo,mensagem,tipo,ativo,prioridade,criado_em,atualizado_em";
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/avisos_internos?select=${encodeURIComponent(select)}&order=prioridade.desc,criado_em.desc`, { headers: apiHeaders() });
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/avisos_internos?select=${encodeURIComponent(select)}&order=prioridade.desc,criado_em.desc`);
   if (!response.ok) throw new Error(await response.text());
   avisosInternos = await response.json();
   avisosUsamBanco = true;
@@ -101,9 +165,9 @@ async function salvarAvisoOficial(aviso) {
   const url = editando
     ? `${SUPABASE_URL}/rest/v1/avisos_internos?id=eq.${encodeURIComponent(aviso.id)}`
     : `${SUPABASE_URL}/rest/v1/avisos_internos`;
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: editando ? "PATCH" : "POST",
-    headers: {...apiHeaders(), "Content-Type":"application/json", "Prefer":"return=representation"},
+    headers: {"Content-Type":"application/json", "Prefer":"return=representation"},
     body: JSON.stringify(corpo)
   });
   if (!response.ok) throw new Error(await response.text());
@@ -116,7 +180,7 @@ async function excluirAvisoOficial(id) {
     salvarAvisosLocais();
     return;
   }
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/avisos_internos?id=eq.${encodeURIComponent(id)}`, { method:"DELETE", headers:apiHeaders() });
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/avisos_internos?id=eq.${encodeURIComponent(id)}`, { method:"DELETE" });
   if (!response.ok) throw new Error(await response.text());
 }
 
@@ -232,7 +296,7 @@ function renderAvisosAdmin() {
 
 async function carregarUsuarios() {
   if (!ehAdministrador()) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/perfis_usuarios?select=usuario_id,nome,email,perfil,ativo,criado_em&order=criado_em.asc`, { headers: apiHeaders() });
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/perfis_usuarios?select=usuario_id,nome,email,perfil,ativo,criado_em&order=criado_em.asc`);
   if (!response.ok) {
     $("listaUsuarios").innerHTML = '<div class="empty">Execute a migração do painel de usuários no Supabase.</div>';
     $("totalUsuarios").textContent = "Configuração pendente";
@@ -263,7 +327,7 @@ async function salvarUsuario(usuarioId) {
   const linha = document.querySelector(`[data-user-row="${CSS.escape(String(usuarioId))}"]`);
   const perfil = linha.querySelector("[data-user-role]").value;
   const ativo = linha.querySelector("[data-user-active]").checked;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/perfis_usuarios?usuario_id=eq.${encodeURIComponent(usuarioId)}`, {method:"PATCH",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({perfil,ativo,atualizado_em:new Date().toISOString()})});
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/perfis_usuarios?usuario_id=eq.${encodeURIComponent(usuarioId)}`, {method:"PATCH",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({perfil,ativo,atualizado_em:new Date().toISOString()})});
   if (!response.ok) { mostrarToast("Não foi possível atualizar o usuário"); return; }
   const atualizado = (await response.json())[0];
   usuarios = usuarios.map(usuario => String(usuario.usuario_id) === String(usuarioId) ? {...usuario,...atualizado} : usuario);
@@ -273,7 +337,7 @@ async function salvarUsuario(usuarioId) {
 
 async function carregarAuditoria() {
   if (!ehAdministrador()) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/acessos_credenciais_convenios?select=id,convenio_id,convenio_nome,usuario_email,acao,acessado_em&order=acessado_em.desc&limit=100`, {headers:apiHeaders()});
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/acessos_credenciais_convenios?select=id,convenio_id,convenio_nome,usuario_email,acao,acessado_em&order=acessado_em.desc&limit=100`);
   if (!response.ok) { $("listaAuditoria").innerHTML = '<div class="empty">Não foi possível carregar a auditoria.</div>'; return; }
   acessosCredenciais = await response.json();
   const nomes = new Map(convenios.map(item => [String(item.id), item.nome]));
@@ -283,7 +347,7 @@ async function carregarAuditoria() {
 
 async function carregarFavoritos() {
   if (!sessao?.user?.id) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/favoritos_exames?select=exame_id&usuario_id=eq.${encodeURIComponent(sessao.user.id)}`, {headers:apiHeaders()});
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/favoritos_exames?select=exame_id&usuario_id=eq.${encodeURIComponent(sessao.user.id)}`);
   if (!response.ok) return;
   favoritosIds = new Set((await response.json()).map(item => String(item.exame_id)));
 }
@@ -353,7 +417,7 @@ function renderExames() {
 async function alternarFavorito(exameId) {
   const ativo = favoritosIds.has(String(exameId));
   const url = `${SUPABASE_URL}/rest/v1/favoritos_exames?usuario_id=eq.${encodeURIComponent(sessao.user.id)}&exame_id=eq.${encodeURIComponent(exameId)}`;
-  const response = await fetch(ativo ? url : `${SUPABASE_URL}/rest/v1/favoritos_exames`, ativo ? {method:"DELETE",headers:apiHeaders()} : {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json"},body:JSON.stringify({usuario_id:sessao.user.id,exame_id:exameId})});
+  const response = await apiFetch(ativo ? url : `${SUPABASE_URL}/rest/v1/favoritos_exames`, ativo ? {method:"DELETE"} : {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({usuario_id:sessao.user.id,exame_id:exameId})});
   if (!response.ok) { mostrarToast("Não foi possível alterar o favorito"); return; }
   ativo ? favoritosIds.delete(String(exameId)) : favoritosIds.add(String(exameId));
   renderExames(); mostrarToast(ativo ? "Removido dos favoritos" : "Adicionado aos favoritos");
@@ -408,10 +472,10 @@ function abrirExame(id) {
     const form = new FormData(event.currentTarget);
     const moedaParaNumero = valor => { const limpo = String(valor || "").trim(); return limpo ? Number(limpo.replace(/\./g, "").replace(",", ".")) : null; };
     const dados = { tipo:form.get("tipo"), sigla:String(form.get("sigla") || "").trim().toUpperCase(), nome:String(form.get("nome") || "").trim(), codigo:String(form.get("codigo") || "").trim(), tempo_jejum:String(form.get("tempo_jejum") || "").trim(), autorizacao:form.get("autorizacao"), anexo:form.get("anexo"), termos:form.get("termos"), link_termo:normalizarUrl(form.get("link_termo")), observacao:String(form.get("observacao") || "").trim(), valor_cartao_biofast:moedaParaNumero(form.get("valor_biofast")), valor_sem_cartao:moedaParaNumero(form.get("valor_sem_cartao")) };
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(e.id)}`, {method:"PATCH",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(dados)});
+    const response = await apiFetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(e.id)}`, {method:"PATCH",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(dados)});
     if (!response.ok) { console.error(await response.text()); mostrarToast("O banco bloqueou a edição"); return; }
     await response.json();
-    const confirmacao = await fetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(e.id)}&select=id,tipo,sigla,nome,codigo,autorizacao,anexo,termos,tempo_jejum,link_termo,observacao,valor_cartao_biofast,valor_sem_cartao,ativo`, {headers:apiHeaders()});
+    const confirmacao = await apiFetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(e.id)}&select=id,tipo,sigla,nome,codigo,autorizacao,anexo,termos,tempo_jejum,link_termo,observacao,valor_cartao_biofast,valor_sem_cartao,ativo`);
     if (!confirmacao.ok) { mostrarToast("O exame foi salvo, mas não foi possível conferir"); return; }
     const atualizados = await confirmacao.json();
     if (!atualizados[0] || String(atualizados[0].observacao || "") !== dados.observacao) { mostrarToast("A observação não foi confirmada pelo banco"); return; }
@@ -425,7 +489,7 @@ async function alterarStatusExame(id, ativo) {
   const exame = exames.find(item => String(item.id) === String(id));
   if (!ehAdministrador() || !exame) return;
   if (!confirm(`${ativo ? "Reativar" : "Desativar"} o exame ${exame.sigla} — ${exame.nome}?`)) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(id)}`, {method:"PATCH",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({ativo})});
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(id)}`, {method:"PATCH",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({ativo})});
   if (!response.ok) { mostrarToast("Não foi possível alterar o status"); return; }
   exame.ativo = ativo;
   renderExames(); abrirExame(id); mostrarToast(ativo ? "Exame reativado" : "Exame desativado");
@@ -435,7 +499,7 @@ async function excluirExame(id) {
   const exame = exames.find(item => String(item.id) === String(id));
   if (!ehAdministrador() || !exame) return;
   if (!confirm(`Excluir definitivamente ${exame.sigla} — ${exame.nome}? Esta ação não pode ser desfeita.`)) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(id)}`, {method:"DELETE",headers:apiHeaders()});
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/exames?id=eq.${encodeURIComponent(id)}`, {method:"DELETE"});
   if (!response.ok) { mostrarToast("Não foi possível excluir o exame"); return; }
   exames = exames.filter(item => String(item.id) !== String(id));
   fecharDrawer(); renderExames(); mostrarToast("Exame excluído");
@@ -470,7 +534,7 @@ function abrirNovoExame() {
     const moeda = valor => { const texto=String(valor||"").trim(); return texto ? Number(texto.replace(/\./g,"").replace(",",".")) : null; };
     const dados = {tipo:form.get("tipo"),sigla:String(form.get("sigla")||"").trim().toUpperCase(),nome:String(form.get("nome")||"").trim(),codigo:String(form.get("codigo")||"").trim(),tempo_jejum:String(form.get("tempo_jejum")||"").trim(),autorizacao:form.get("autorizacao"),anexo:form.get("anexo"),termos:form.get("termos"),link_termo:normalizarUrl(form.get("link_termo")),observacao:String(form.get("observacao")||"").trim(),valor_cartao_biofast:moeda(form.get("valor_biofast")),valor_sem_cartao:moeda(form.get("valor_sem_cartao")),ativo:true};
     const botao = $("salvarNovoExame"); botao.disabled=true; botao.textContent="Cadastrando...";
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/exames`, {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(dados)});
+    const response = await apiFetch(`${SUPABASE_URL}/rest/v1/exames`, {method:"POST",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(dados)});
     if (!response.ok) { console.error(await response.text()); mostrarToast("Não foi possível cadastrar o exame"); botao.disabled=false; botao.textContent="Cadastrar exame"; return; }
     const criado = (await response.json())[0];
     exames.push(criado); exames.sort((a,b)=>String(a.sigla).localeCompare(String(b.sigla),"pt-BR"));
@@ -480,7 +544,7 @@ function abrirNovoExame() {
 
 async function carregarHistorico(exameId) {
   $("historicoExame").hidden = false;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/exame_alteracoes?select=usuario_email,dados_anteriores,dados_novos,alterado_em&exame_id=eq.${encodeURIComponent(exameId)}&order=alterado_em.desc&limit=20`, {headers:apiHeaders()});
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/exame_alteracoes?select=usuario_email,dados_anteriores,dados_novos,alterado_em&exame_id=eq.${encodeURIComponent(exameId)}&order=alterado_em.desc&limit=20`);
   if (!response.ok) { $("listaHistorico").innerHTML = '<div class="history-empty">Não foi possível carregar o histórico.</div>'; return; }
   const itens = await response.json();
   const labels = {nome:"Nome",sigla:"Sigla",codigo:"Código",tempo_jejum:"Jejum",autorizacao:"Autorização",anexo:"Anexo",termos:"Termos",link_termo:"PDF",observacao:"Observação",valor_cartao_biofast:"Valor Biofast",valor_sem_cartao:"Valor sem cartão",tipo:"Tipo"};
@@ -562,7 +626,7 @@ function abrirNovoConvenio() {
       p_observacao:String(form.get("observacao") || "").trim(),
       p_links_extras:linksExtras
     };
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/criar_convenio_seguro`, {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const response = await apiFetch(`${SUPABASE_URL}/rest/v1/rpc/criar_convenio_seguro`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     if (!response.ok) {
       console.error(await response.text());
       mostrarToast("Não foi possível criar o convênio");
@@ -582,9 +646,9 @@ function abrirNovoConvenio() {
 async function carregarCredencialConvenio(id) {
   const botao = $("carregarCredencial");
   if (botao) { botao.disabled = true; botao.textContent = "Verificando acesso..."; }
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/obter_credencial_convenio`, {
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/rpc/obter_credencial_convenio`, {
     method:"POST",
-    headers:{...apiHeaders(),"Content-Type":"application/json"},
+    headers:{"Content-Type":"application/json"},
     body:JSON.stringify({p_convenio_id:id})
   });
   if (!response.ok) { mostrarToast("Não foi possível liberar a credencial"); abrirConvenio(id); return; }
@@ -652,10 +716,10 @@ function abrirConvenio(id) {
     let linksExtras;
     try { linksExtras = JSON.parse(form.get("links_extras") || "[]"); } catch { mostrarToast("Links extras precisam estar em formato válido"); return; }
     const dados = { nome:form.get("nome"), categoria:form.get("categoria"), site:normalizarUrl(form.get("site")), telefone:form.get("telefone"), observacao:form.get("observacao"), links_extras:linksExtras };
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/convenios?id=eq.${encodeURIComponent(c.id)}`, {method:"PATCH", headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"}, body:JSON.stringify(dados)});
+    const response = await apiFetch(`${SUPABASE_URL}/rest/v1/convenios?id=eq.${encodeURIComponent(c.id)}`, {method:"PATCH", headers:{"Content-Type":"application/json","Prefer":"return=representation"}, body:JSON.stringify(dados)});
     if (!response.ok) { console.error(await response.text()); mostrarToast("O banco bloqueou a edição"); return; }
     if (credencial) {
-      const respostaCredencial = await fetch(`${SUPABASE_URL}/rest/v1/rpc/salvar_credencial_convenio`, {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json"},body:JSON.stringify({p_convenio_id:c.id,p_usuario:form.get("usuario_seguro") || "",p_senha:form.get("senha_segura") || ""})});
+      const respostaCredencial = await apiFetch(`${SUPABASE_URL}/rest/v1/rpc/salvar_credencial_convenio`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p_convenio_id:c.id,p_usuario:form.get("usuario_seguro") || "",p_senha:form.get("senha_segura") || ""})});
       if (!respostaCredencial.ok) { mostrarToast("Dados salvos, mas a credencial não foi atualizada"); return; }
       credenciaisConvenios.set(String(c.id), {usuario:form.get("usuario_seguro") || "",senha:form.get("senha_segura") || ""});
     }
@@ -671,7 +735,7 @@ async function alterarStatusConvenio(id, ativo) {
   const convenio = convenios.find(item => String(item.id) === String(id));
   if (!ehAdministrador() || !convenio) return;
   if (!confirm(`${ativo ? "Reativar" : "Desativar"} o convênio ${convenio.nome}?`)) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/convenios?id=eq.${encodeURIComponent(id)}`, {method:"PATCH",headers:{...apiHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({ativo})});
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/convenios?id=eq.${encodeURIComponent(id)}`, {method:"PATCH",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({ativo})});
   if (!response.ok) { mostrarToast("Não foi possível alterar o status"); return; }
   convenio.ativo = ativo;
   renderConvenios(); abrirConvenio(id); await carregarAuditoria();
@@ -682,7 +746,7 @@ async function excluirConvenio(id) {
   const convenio = convenios.find(item => String(item.id) === String(id));
   if (!ehAdministrador() || !convenio) return;
   if (!confirm(`Excluir definitivamente o convênio ${convenio.nome} e suas credenciais criptografadas?`)) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/excluir_convenio_seguro`, {method:"POST",headers:{...apiHeaders(),"Content-Type":"application/json"},body:JSON.stringify({p_convenio_id:id})});
+  const response = await apiFetch(`${SUPABASE_URL}/rest/v1/rpc/excluir_convenio_seguro`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p_convenio_id:id})});
   if (!response.ok) { mostrarToast("Não foi possível excluir o convênio"); return; }
   convenios = convenios.filter(item => String(item.id) !== String(id));
   convenioSelecionado = null; credenciaisConvenios.clear(); renderConvenios();
@@ -790,12 +854,6 @@ $("buscaOrcamento").addEventListener("input", renderBuscaOrcamento);
 $("imprimirOrcamento").addEventListener("click", () => { if (!itensOrcamento.length) { mostrarToast("Adicione pelo menos um exame"); return; } window.print(); });
 $("dataOrcamento").value = new Date().toISOString().slice(0,10);
 
-function sessaoValida() {
-  if (!sessao?.access_token) return false;
-  if (!sessao.expires_at) return true;
-  return Number(sessao.expires_at) > Math.floor(Date.now() / 1000) + 30;
-}
-
 function mostrarSistema() {
   $("loginGate").classList.add("hidden");
   $("usuarioLogado").textContent = sessao?.user?.email || "Usuário autenticado";
@@ -887,6 +945,7 @@ $("formCadastro").addEventListener("submit", async event => {
     if (data.access_token) {
       sessao = {...data,expires_at:Math.floor(Date.now()/1000)+Number(data.expires_in||3600)};
       guardarSessao(sessao);
+      iniciarRenovacaoSessao();
       await carregarPerfil();
       mostrarSistema();
       await iniciar();
@@ -931,6 +990,7 @@ $("formLogin").addEventListener("submit", async event => {
     }
     sessao = { ...data, expires_at: Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600) };
     guardarSessao(sessao);
+    iniciarRenovacaoSessao();
     await carregarPerfil();
     mostrarSistema();
     await iniciar();
@@ -951,6 +1011,8 @@ $("btnSair").addEventListener("click", async () => {
   } catch (_) {}
   sessao = null;
   perfilAtual = null;
+  if (temporizadorSessao) clearInterval(temporizadorSessao);
+  temporizadorSessao = null;
   apagarSessao();
   exames = []; convenios = [];
   mostrarLogin();
@@ -982,13 +1044,16 @@ async function iniciar() {
 }
 
 (async function iniciarAplicacao() {
-  if (!sessaoValida()) {
+  if (!sessao?.access_token) {
     sessao = null;
     apagarSessao();
     mostrarLogin();
     return;
   }
   try {
+    await renovarSessaoSePreciso(false);
+    if (!sessaoValida()) throw new Error("Sua sessao expirou. Entre novamente.");
+    iniciarRenovacaoSessao();
     await carregarPerfil();
     mostrarSistema();
     await iniciar();
